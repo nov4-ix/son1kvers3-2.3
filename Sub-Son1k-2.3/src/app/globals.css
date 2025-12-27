@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=JetBrains+Mono:wght@100;200;300;400;500;600;700;800;900&family=Orbitron:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-inter: 'Inter', 'Poppins', sans-serif;
+    --font-orbitron: 'Orbitron', 'Biometric W95', monospace;
+    --font-space-mono: 'Space Mono', 'JetBrains Mono', monospace;
+    /* Ochoa Guitarras brand palette */
+    --ochoa-gold: #D4AF37;
+    --ochoa-gold-dark: #9B7F2F;
+    --ochoa-brown-light: #5C3D2E;
+    --ochoa-brown: #3D2817;
+    --ochoa-brown-deep: #2C1810;
+    --ochoa-brown-text: #6B4423;
+  }
+}
+
+@layer utilities {
+  .glass-effect {
+    backdrop-filter: blur(16px);
+    background: rgba(26, 29, 41, 0.5);
+    border: 1px solid rgba(0, 255, 231, 0.2);
+  }
+
+  .glow-purple {
+    box-shadow: 0 0 20px rgba(184, 77, 255, 0.4),
+                0 0 40px rgba(0, 255, 231, 0.2);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #00FFE7 0%, #B84DFF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Ochoa brand utilities */
+  .ochoa-bg-gold {
+    background: linear-gradient(90deg, var(--ochoa-gold) 0%, #C9A856 50%, var(--ochoa-gold-dark) 100%);
+    color: var(--ochoa-brown-deep);
+  }
+
+  .ochoa-text-brown {
+    color: var(--ochoa-brown);
+  }
+
+  .ochoa-logo-img {
+    width: 240px;
+    height: auto;
+    display: inline-block;
+  }
+}
+
+/* Inter font variables */
+.inter_e5387405-module__6kjfMG__variable {
+  --font-inter: 'Inter', 'Poppins', sans-serif;
+}
+
+/* Orbitron font variables */
+.orbitron_5d61b861-module__tzdIhq__variable {
+  --font-orbitron: 'Orbitron', 'Biometric W95', monospace;
+}
+
+/* Space Mono font variables */
+.space_mono_6ea683de-module__e0u9Iq__variable {
+  --font-space-mono: 'Space Mono', 'JetBrains Mono', monospace;
+}

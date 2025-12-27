@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suno Cookie Extractor (Phoenix Protocol)</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0f0f0f;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid #00ff00;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid #00ff00;
+            padding-bottom: 10px;
+        }
+
+        .step {
+            margin-bottom: 20px;
+        }
+
+        .code-block {
+            background: #1a1a1a;
+            padding: 15px;
+            border-left: 3px solid #00ff00;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            user-select: all;
+            cursor: pointer;
+        }
+
+        .code-block:hover {
+            background: #222;
+        }
+
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-family: inherit;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #00cc00;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            background: #222;
+            border: 1px solid #00ff00;
+            color: #fff;
+            margin-top: 5px;
+            font-family: inherit;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Phoenix Protocol<br>Cookie Extractor</h1>
+
+        <div class="step">
+            <h3>Paso 1: Inicia Sesión</h3>
+            <p>Abre <a href="https://suno.com" target="_blank" style="color: #fff;">suno.com</a> en una nueva pestaña
+                (Chrome/Edge/Brave) e inicia sesión con tu cuenta (Google/Discord/Microsoft).</p>
+        </div>
+
+        <div class="step">
+            <h3>Paso 2: Copia el Código Mágico</h3>
+            <p>Haz clic en el cuadro de abajo para copiar el script de extracción:</p>
+            <div class="code-block" onclick="copyToClipboard(this.innerText)">
+                (function() {
+                const cookie = document.cookie;
+                console.log("%c[PHOENIX PROTOCOL] Cookies Capturadas:", "color: #00ff00; font-size: 16px; font-weight:
+                bold;");
+                console.log(cookie);
+
+                // Crear elemento visual para copiar
+                const div = document.createElement('div');
+                div.style.position = 'fixed';
+                div.style.top = '0';
+                div.style.left = '0';
+                div.style.width = '100%';
+                div.style.height = '100%';
+                div.style.backgroundColor = 'rgba(0,0,0,0.9)';
+                div.style.color = '#00ff00';
+                div.style.zIndex = '999999';
+                div.style.display = 'flex';
+                div.style.flexDirection = 'column';
+                div.style.justifyContent = 'center';
+                div.style.alignItems = 'center';
+                div.style.fontFamily = 'monospace';
+                div.style.padding = '20px';
+                div.style.boxSizing = 'border-box';
+
+                const h1 = document.createElement('h1');
+                h1.innerText = 'PHOENIX PROTOCOL - COOKIE CAPTURADA';
+                div.appendChild(h1);
+
+                const textarea = document.createElement('textarea');
+                textarea.value = cookie;
+                textarea.style.width = '80%';
+                textarea.style.height = '200px';
+                textarea.style.background = '#111';
+                textarea.style.color = '#00ff00';
+                textarea.style.border = '1px solid #00ff00';
+                textarea.style.padding = '10px';
+                textarea.style.marginTop = '20px';
+                div.appendChild(textarea);
+
+                const btn = document.createElement('button');
+                btn.innerText = 'COPIAR AL PORTAPAPELES Y CERRAR';
+                btn.style.marginTop = '20px';
+                btn.style.padding = '15px 30px';
+                btn.style.background = '#00ff00';
+                btn.style.color = 'black';
+                btn.style.border = 'none';
+                btn.style.fontWeight = 'bold';
+                btn.style.cursor = 'pointer';
+                btn.onclick = () => {
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(div);
+                alert('Cookie copiada al portapapeles. ¡Pégala en tu .env o Dashboard!');
+                };
+                div.appendChild(btn);
+
+                document.body.appendChild(div);
+                })();
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>Paso 3: Ejecuta en la Consola</h3>
+            <p>1. En la pestaña de Suno, presiona <strong>F12</strong> (o Clic derecho -> Inspeccionar) para abrir las
+                Developer Tools.</p>
+            <p>2. Ve a la pestaña <strong>Console</strong>.</p>
+            <p>3. Pega el código (Ctrl+V) y presiona <strong>Enter</strong>.</p>
+            <p>4. Aparecerá una pantalla negra. Copia la cookie.</p>
+        </div>
+
+        <div class="step">
+            <h3>Paso 4: Configura el Backend</h3>
+            <p>Ve a tu Dashboard de Fly.io -> App -> Secrets (o edita tu .env local) y establece la variable:</p>
+            <div class="code-block">SUNO_COOKIES="PEGAR_AQUI_LA_COOKIE_COMPLETA"</div>
+            <p>Si tienes múltiples cuentas, sepáralas por comas.</p>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Código copiado al portapapeles!');
+            });
+        }
+    </script>
+</body>
+
+</html>

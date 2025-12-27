@@ -1,0 +1,6 @@
+
+> @super-son1k/the-generator@1.0.0 build /Users/nov4-ix/Desktop/Super-Son1k-2.0/apps/the-generator
+> tsc && vite build
+
+[36mvite v7.1.12 [32mbuilding for production...[36m[39m
+[2K[1Gtransforming (1) [2msrc/main.t[2K[1Gtransforming (2) [2mindex.html[2K[1Gtransforming (5) [2msrc/App.ts[2K[1Gtransforming (6) [2m../../node[2K[1Gtransforming (7) [2m../../node[2K[1G

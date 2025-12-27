@@ -1,0 +1,398 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  username      String   @unique
+  tier          String   @default("FREE")
+  isAdmin       Boolean  @default(false)
+  alvaeEnabled  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastLoginAt   DateTime?
+
+  // Relations
+  userTier      UserTier?
+  userExtension UserExtension?
+  tokens        Token[]
+  generations   Generation[]
+  nfts          NFT[]
+  purchases     NFTPurchase[]
+  collaborationRooms CollaborationRoom[] @relation("RoomOwner")
+  analyticsEvents AnalyticsEvent[]
+  generationAnalytics GenerationAnalytics[]
+  requestAnalytics RequestAnalytics[]
+  extensionUsage ExtensionUsage[]
+  credits       UserCredits?
+  queueItems    GenerationQueue[]
+
+  @@map("users")
+}
+
+model UserCredits {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id])
+  
+  // Credit System
+  totalCredits      Int      @default(100)  // Starting credits
+  usedCredits       Int      @default(0)
+  bonusCredits      Int      @default(0)    // From achievements
+  
+  // Boost System (tiempo de generación)
+  boostMinutes      Int      @default(60)   // Minutos de boost disponibles
+  boostRefreshRate  Int      @default(5)    // Minutos que regenera por hora
+  maxBoostCapacity  Int      @default(120)  // Límite máximo
+  lastBoostRefresh  DateTime @default(now())
+  
+  // Gamification
+  streak            Int      @default(0)    // Días consecutivos
+  level             Int      @default(1)    // Nivel de usuario
+  xp                Int      @default(0)    // Puntos de experiencia
+  
+  // Tracking
+  earnedBy          Json     @default("[]") // ["daily_login", "referral"]
+  spentOn           Json     @default("[]") // ["generation", "cover"]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([userId])
+  @@map("user_credits")
+}
+
+model TokenPool {
+  id                String   @id @default(cuid())
+  
+  // Token Info
+  token             String   @unique
+  encryptedToken    String   // Encrypted version
+  source            String   // 'manual', 'extension', 'partner'
+  
+  // Health & Performance
+  isActive          Boolean  @default(true)
+  healthScore       Float    @default(100)  // 0-100
+  lastUsed          DateTime?
+  lastHealthCheck   DateTime @default(now())
+  failureCount      Int      @default(0)
+  successCount      Int      @default(0)
+  avgResponseTime   Float    @default(0)
+  
+  // Limits & Quotas
+  dailyLimit        Int      @default(50)
+  currentDailyUsage Int      @default(0)
+  resetAt           DateTime
+  
+  // Priority & Tier
+  priority          Int      @default(0)    // Higher = better token
+  tier              String   @default("free") // free, pro, enterprise
+  dedicatedToUser   String?  // For enterprise users
+  
+  // Partner Info (if applicable)
+  partnerId         String?
+  partner           TokenPartner? @relation(fields: [partnerId], references: [id])
+  generationQueue   GenerationQueue[]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([isActive, healthScore])
+  @@index([tier, priority])
+  @@map("token_pool")
+}
+
+model TokenPartner {
+  id                String   @id @default(cuid())
+  name              String
+  type              String   // 'sponsor', 'community', 'enterprise'
+  
+  // Contribution
+  tokensContributed Int      @default(0)
+  tokensActive      Int      @default(0)
+  
+  // Revenue Share
+  revenueShare      Float    @default(0)
+  totalEarned       Float    @default(0)
+  
+  // Branding
+  brandingAllowed   Boolean  @default(false)
+  logoUrl           String?
+  websiteUrl        String?
+  
+  // Analytics
+  totalGenerations  Int      @default(0)
+  analytics         Json     @default("{}")
+  
+  tokens            TokenPool[]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@map("token_partners")
+}
+
+model GenerationQueue {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  
+  // Queue Info
+  position          Int?
+  priority          Int      @default(0)    // Higher = faster
+  estimatedWaitTime Int      // in seconds
+  
+  // Generation Details
+  prompt            String
+  type              String   // 'song', 'cover', 'lyrics'
+  parameters        Json
+  
+  // Status
+  status            String   @default("queued") // queued, processing, completed, failed
+  startedAt         DateTime?
+  completedAt       DateTime?
+  
+  // Token Used
+  tokenId           String?
+  tokenPool         TokenPool? @relation(fields: [tokenId], references: [id])
+  
+  // Credits
+  creditsUsed       Int      @default(0)
+  boostMinutesUsed  Int      @default(0)
+  
+  // Result
+  result            Json?
+  error             String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([userId, status])
+  @@index([status, priority, createdAt])
+  @@map("generation_queue")
+}
+
+model UserTier {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  tier                 String   @default("FREE")
+  monthlyGenerations   Int      @default(5)
+  dailyGenerations     Int      @default(2)
+  usedThisMonth        Int      @default(0)
+  usedToday            Int      @default(0)
+  maxDuration          Int      @default(60)
+  quality              String   @default("standard")
+  features             String   @default("basic_generation,community_access")
+  subscriptionStatus   String?
+  subscriptionEndDate  DateTime?
+  stripeCustomerId     String?  @unique
+  stripeSubscriptionId String?
+  monthResetAt         DateTime @default(now())
+  dayResetAt           DateTime @default(now())
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_tiers")
+}
+
+model UserExtension {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  tokenHash     String?
+  isActive      Boolean   @default(false)
+  activatedAt   DateTime?
+  deactivatedAt DateTime?
+  lastUsed      DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_extensions")
+}
+
+model Token {
+  id            String    @id @default(cuid())
+  hash          String    @unique
+  userId        String?
+  email         String?
+  isActive      Boolean   @default(true)
+  isValid       Boolean   @default(true)
+  usageCount    Int       @default(0)
+  rateLimit     Int       @default(10)
+  tier          String    @default("FREE")
+  expiresAt     DateTime?
+  lastUsed      DateTime?
+  metadata      String   @default("{}")
+  encryptedToken String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  usage TokenUsage[]
+
+  @@map("tokens")
+}
+
+model TokenUsage {
+  id           String   @id @default(cuid())
+  tokenId      String
+  endpoint     String
+  method       String
+  statusCode   Int
+  responseTime Int
+  timestamp    DateTime @default(now())
+  error        String?
+
+  // Relations
+  token Token @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+
+  @@map("token_usage")
+}
+
+model Generation {
+  id          String   @id @default(cuid())
+  userId      String
+  prompt      String
+  style       String   @default("pop")
+  duration    Int      @default(60)
+  quality     String   @default("standard")
+  status      String   @default("pending")
+  generationTaskId String?
+  audioUrl    String?
+  metadata    String   @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nfts NFT[]
+
+  @@map("generations")
+}
+
+model NFT {
+  id           String   @id @default(cuid())
+  userId       String
+  generationId String
+  title        String
+  description  String   @default("")
+  price        Float    @default(0)
+  audioUrl     String
+  metadata     String   @default("{}")
+  status       String   @default("active")
+  soldAt       DateTime?
+  soldTo       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generation Generation   @relation(fields: [generationId], references: [id], onDelete: Cascade)
+  purchases  NFTPurchase[]
+
+  @@map("nfts")
+}
+
+model NFTPurchase {
+  id        String   @id @default(cuid())
+  nftId     String
+  buyerId   String
+  sellerId  String
+  price     Float
+  status    String   @default("completed")
+  createdAt DateTime @default(now())
+
+  // Relations
+  nft    NFT  @relation(fields: [nftId], references: [id], onDelete: Cascade)
+  buyer  User @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@map("nft_purchases")
+}
+
+model CollaborationRoom {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  isPublic    Boolean  @default(false)
+  ownerId     String
+  members     String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  owner User @relation("RoomOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@map("collaboration_rooms")
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  userId     String
+  event      String
+  properties String   @default("{}")
+  timestamp  DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("analytics_events")
+}
+
+model GenerationAnalytics {
+  id           String   @id @default(cuid())
+  userId       String
+  generationId String
+  prompt       String
+  style        String
+  duration     Int
+  quality      String
+  timestamp    DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("generation_analytics")
+}
+
+model RequestAnalytics {
+  id           String   @id @default(cuid())
+  userId       String?
+  endpoint     String
+  method       String
+  statusCode   Int
+  duration     Int
+  timestamp    DateTime @default(now())
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("request_analytics")
+}
+
+model ExtensionUsage {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  metadata  String   @default("{}")
+  timestamp DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("extension_usage")
+}

@@ -1,0 +1,6 @@
+[33m4261274[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m docs: actualizar progreso a 90% y resumen final
+[33mfa5c8e6[m feat: integrar ErrorBoundary y setup básico de testing
+[33m9ce6d73[m docs: actualizar progreso a 85%
+[33mbf49b00[m feat: optimizaciones avanzadas - code splitting, virtual scrolling y next.js config
+[33m1d25b1b[m feat: optimizaciones de performance con memoización
+[33mb12bc9d[m feat: agregar ErrorBoundary, custom error classes y toast utilities

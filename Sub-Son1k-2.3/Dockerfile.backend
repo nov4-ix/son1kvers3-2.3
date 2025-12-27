@@ -1,0 +1,35 @@
+# Dockerfile for Backend Service
+FROM node:20-slim
+
+# Install system dependencies (openssl for Prisma)
+RUN apt-get update -y && apt-get install -y openssl
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Set working directory
+WORKDIR /app
+
+# Copy workspace config
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+
+# Copy source code (monorepo structure)
+COPY packages/backend ./packages/backend
+COPY packages/shared-types ./packages/shared-types
+COPY packages/shared-utils ./packages/shared-utils
+
+# Install dependencies (frozen lockfile for speed and consistency)
+RUN pnpm install --frozen-lockfile
+
+# Generate Prisma Client
+WORKDIR /app/packages/backend
+RUN npx prisma generate
+
+# Build Backend
+RUN pnpm run build
+
+# Expose port
+EXPOSE 3000
+
+# Start command
+CMD ["node", "dist/index.js"]

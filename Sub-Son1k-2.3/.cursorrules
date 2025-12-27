@@ -1,0 +1,95 @@
+# Son1kVerse - Cursor Rules
+
+## Project Overview
+Son1kVerse is a revolutionary AI music creation platform with multiple frontend applications and a unified backend.
+
+## Architecture
+- **Monorepo**: pnpm workspaces
+- **Frontends**: React + Vite (ghost-studio, the-generator), Next.js (the-generator-nextjs)
+- **Backend**: Fastify + Prisma + BullMQ
+- **Auth**: Supabase
+- **Database**: PostgreSQL (via Supabase or standalone)
+
+## Critical Rules
+
+### 1. Audio Management (CRITICAL)
+- **NEVER** create multiple Audio instances without using the global audio store
+- Always use `useAudioStore` from `src/store/audioStore.ts` to prevent multiple audios playing
+- Only one audio should play at a time across the entire app
+
+### 2. Environment Variables
+- Always use `config` from `src/lib/config/env.ts` instead of `import.meta.env` directly
+- Required variables are validated at startup
+- Never hardcode URLs - use environment variables
+
+### 3. TypeScript
+- Use strict types - avoid `any`
+- Define API response types in `src/types/api.ts`
+- Use shared types from `@super-son1k/shared-types`
+
+### 4. Memory Management
+- Always cleanup audio elements on unmount
+- Revoke object URLs when done
+- Close AudioContext when done
+- Use `cleanup()` functions in stores
+
+### 5. Framer Motion
+- Use `mode="wait"` instead of deprecated `exitBeforeEnter`
+- Always wrap animated components in `AnimatePresence` when needed
+
+### 6. Error Handling
+- Always handle errors in async functions
+- Show user-friendly error messages
+- Log errors to console for debugging
+
+### 7. Accessibility (A11y)
+- Add `aria-label` to all interactive elements
+- Use `aria-pressed` for toggle buttons
+- Ensure keyboard navigation works
+
+## Code Style
+- Use functional components with hooks
+- Prefer TypeScript over JavaScript
+- Use Zustand for state management
+- Use React Query for server state (if needed)
+
+## File Structure
+```
+apps/
+  ghost-studio/
+    src/
+      components/     # React components
+      hooks/          # Custom hooks
+      store/          # Zustand stores
+      lib/            # Utilities and config
+      types/          # TypeScript types
+  the-generator/
+    src/
+      components/
+      providers/
+      lib/
+      store/
+packages/
+  backend/            # Fastify API
+  shared-types/       # Shared TypeScript types
+  shared-ui/          # Shared UI components
+```
+
+## Testing
+- Write tests for critical functionality
+- Test audio playback logic
+- Test environment variable validation
+- Test error handling
+
+## Deployment
+- All frontends deploy to Vercel
+- Backend deploys to Railway/Render
+- Environment variables must be set in deployment platform
+- Never commit `.env` files
+
+## Security
+- Never expose API keys in code
+- Use Supabase RLS for database security
+- Validate all user inputs
+- Use authentication middleware for protected routes
+

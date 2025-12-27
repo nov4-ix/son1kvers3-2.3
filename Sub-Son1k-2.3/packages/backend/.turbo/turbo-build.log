@@ -1,0 +1,156 @@
+
+> @super-son1k/backend@2.2.0 build C:\Users\qrrom\Downloads\Sub-Son1k-2.3\Sub-Son1k-2.3\packages\backend
+> npx pnpm install --filter backend --include-workspace-root && npx prisma generate && npx tsc
+
+../..                                    | Progress: resolved 1, reused 0, downloaded 0, added 0
+../..                                    | Progress: resolved 9, reused 9, downloaded 0, added 0
+../..                                    | Progress: resolved 9, reused 10, downloaded 0, added 0
+.                                        |  WARN  deprecated eslint@8.57.1
+../..                                    | Progress: resolved 19, reused 19, downloaded 0, added 0
+../..                                    | Progress: resolved 21, reused 21, downloaded 0, added 0
+.                                        |  WARN  deprecated fluent-ffmpeg@2.1.3
+.                                        |  WARN  deprecated multer@1.4.5-lts.2
+../..                                    | Progress: resolved 30, reused 30, downloaded 0, added 0
+../..                                    | Progress: resolved 36, reused 36, downloaded 0, added 0
+../..                                    | Progress: resolved 52, reused 52, downloaded 0, added 0
+../..                                    | Progress: resolved 57, reused 57, downloaded 0, added 0
+../..                                    | Progress: resolved 61, reused 61, downloaded 0, added 0
+../..                                    | Progress: resolved 61, reused 62, downloaded 0, added 0
+../..                                    | Progress: resolved 73, reused 73, downloaded 0, added 0
+../..                                    | Progress: resolved 73, reused 74, downloaded 0, added 0
+../..                                    | Progress: resolved 77, reused 77, downloaded 0, added 0
+../..                                    | Progress: resolved 95, reused 95, downloaded 0, added 0
+../..                                    | Progress: resolved 102, reused 102, downloaded 0, added 0
+../..                                    | Progress: resolved 103, reused 103, downloaded 0, added 0
+../..                                    | Progress: resolved 103, reused 104, downloaded 0, added 0
+../..                                    | Progress: resolved 110, reused 110, downloaded 0, added 0
+../..                                    | Progress: resolved 114, reused 114, downloaded 0, added 0
+../..                                    | Progress: resolved 165, reused 120, downloaded 0, added 0
+../..                                    | Progress: resolved 191, reused 131, downloaded 0, added 0
+../..                                    | Progress: resolved 222, reused 160, downloaded 0, added 0
+../..                                    | Progress: resolved 277, reused 193, downloaded 0, added 0
+../..                                    | Progress: resolved 329, reused 238, downloaded 0, added 0
+../..                                    | Progress: resolved 336, reused 245, downloaded 0, added 0
+../..                                    | Progress: resolved 339, reused 248, downloaded 0, added 0
+../..                                    | Progress: resolved 361, reused 269, downloaded 0, added 0
+../..                                    | Progress: resolved 434, reused 342, downloaded 0, added 0
+../..                                    | Progress: resolved 446, reused 354, downloaded 0, added 0
+../..                                    | Progress: resolved 460, reused 368, downloaded 0, added 0
+../..                                    | Progress: resolved 473, reused 381, downloaded 0, added 0
+../..                                    | Progress: resolved 490, reused 398, downloaded 0, added 0
+../..                                    | Progress: resolved 527, reused 435, downloaded 0, added 0
+../..                                    | Progress: resolved 566, reused 452, downloaded 0, added 0
+../..                                    | Progress: resolved 581, reused 467, downloaded 0, added 0
+../..                                    | Progress: resolved 581, reused 468, downloaded 0, added 0
+../..                                    | Progress: resolved 625, reused 488, downloaded 0, added 0
+../..                                    | Progress: resolved 671, reused 510, downloaded 0, added 0
+../..                                    | Progress: resolved 682, reused 521, downloaded 0, added 0
+../..                                    | Progress: resolved 699, reused 543, downloaded 0, added 0
+../..                                    | Progress: resolved 755, reused 599, downloaded 0, added 0
+../..                                    | Progress: resolved 800, reused 648, downloaded 0, added 0
+../..                                    | Progress: resolved 836, reused 684, downloaded 0, added 0
+../..                                    | Progress: resolved 836, reused 685, downloaded 0, added 0
+../..                                    | Progress: resolved 875, reused 721, downloaded 0, added 0
+../..                                    | Progress: resolved 893, reused 739, downloaded 0, added 0
+../..                                    | Progress: resolved 909, reused 755, downloaded 0, added 0
+../..                                    | Progress: resolved 926, reused 772, downloaded 0, added 0
+../..                                    | Progress: resolved 933, reused 779, downloaded 0, added 0
+../..                                    | Progress: resolved 973, reused 819, downloaded 0, added 0
+../..                                    | Progress: resolved 1030, reused 879, downloaded 0, added 0
+../..                                    | Progress: resolved 1048, reused 898, downloaded 0, added 0
+../..                                    | Progress: resolved 1099, reused 949, downloaded 0, added 0
+../..                                    | Progress: resolved 1161, reused 1011, downloaded 0, added 0
+../..                                    | Progress: resolved 1188, reused 1041, downloaded 0, added 0
+../..                                    | Progress: resolved 1199, reused 1052, downloaded 0, added 0
+../..                                    | Progress: resolved 1251, reused 1104, downloaded 0, added 0
+../..                                    | Progress: resolved 1331, reused 1165, downloaded 0, added 0
+../..                                    | Progress: resolved 1387, reused 1221, downloaded 0, added 0
+../..                                    | Progress: resolved 1439, reused 1273, downloaded 0, added 0
+../..                                    | Progress: resolved 1459, reused 1294, downloaded 0, added 0
+../..                                    | Progress: resolved 1461, reused 1296, downloaded 0, added 0
+../..                                    | Progress: resolved 1462, reused 1296, downloaded 0, added 0
+ WARN  5 deprecated subdependencies found: @humanwhocodes/config-array@0.13.0, @humanwhocodes/object-schema@2.0.3, glob@7.2.3, inflight@1.0.6, rimraf@3.0.2
+../..                                    | Progress: resolved 1462, reused 1297, downloaded 0, added 0
+../..                                    |   +8 +
+../..                                    | Progress: resolved 1462, reused 1297, downloaded 0, added 6
+../..                                    | Progress: resolved 1462, reused 1297, downloaded 0, added 8, done
+ WARN  Issues with peer dependencies found
+.
+├─┬ tailwindcss 3.4.19
+│ └─┬ postcss-load-config 6.0.1
+│   └── ✕ unmet peer tsx@^4.8.1: found 3.14.0
+└─┬ vite 7.3.0
+  └── ✕ unmet peer tsx@^4.8.1: found 3.14.0
+
+apps/ghost-studio
+├─┬ tailwindcss 3.4.19
+│ └─┬ postcss-load-config 6.0.1
+│   └── ✕ unmet peer tsx@^4.8.1: found 3.14.0
+└─┬ @super-son1k/shared-ui 1.0.0
+  └── ✕ unmet peer lucide-react@^0.545.0: found 0.544.0
+
+apps/nexus-visual
+├─┬ tailwindcss 3.4.19
+│ └─┬ postcss-load-config 6.0.1
+│   └── ✕ unmet peer tsx@^4.8.1: found 3.14.0
+└─┬ vite 7.3.0
+  └── ✕ unmet peer tsx@^4.8.1: found 3.14.0
+
+apps/nova-post-pilot
+├─┬ tailwindcss 3.4.19
+│ └─┬ postcss-load-config 6.0.1
+│   └── ✕ unmet peer tsx@^4.8.1: found 3.14.0
+└─┬ vite 7.3.0
+  └── ✕ unmet peer tsx@^4.8.1: found 3.14.0
+
+apps/pac-snake
+└─┬ vite 7.3.0
+  └── ✕ unmet peer tsx@^4.8.1: found 3.14.0
+
+apps/the-generator
+├─┬ tailwindcss 3.4.19
+│ └─┬ postcss-load-config 6.0.1
+│   └── ✕ unmet peer tsx@^4.8.1: found 3.14.0
+└─┬ vite 7.3.0
+  └── ✕ unmet peer tsx@^4.8.1: found 3.14.0
+
+apps/the-generator-nextjs
+├─┬ @testing-library/react 14.3.1
+│ ├── ✕ unmet peer react@^18.0.0: found 19.2.3
+│ └── ✕ unmet peer react-dom@^18.0.0: found 19.2.3
+├─┬ @super-son1k/shared-hooks 1.0.0
+│ └── ✕ unmet peer react@^18.2.0: found 19.2.3
+├─┬ @super-son1k/shared-ui 1.0.0
+│ ├── ✕ unmet peer react@^18.2.0: found 19.2.3
+│ └── ✕ unmet peer lucide-react@^0.545.0: found 0.263.1
+├─┬ lucide-react 0.263.1
+│ └── ✕ unmet peer react@"^16.5.1 || ^17.0.0 || ^18.0.0": found 19.2.3
+└─┬ next-auth 4.24.5
+  ├── ✕ unmet peer react@"^17.0.2 || ^18": found 19.2.3
+  ├── ✕ unmet peer react-dom@"^17.0.2 || ^18": found 19.2.3
+  └── ✕ unmet peer next@"^12.2.5 || ^13 || ^14": found 16.0.10
+
+apps/web-classic
+├─┬ tailwindcss 3.4.19
+│ └─┬ postcss-load-config 6.0.1
+│   └── ✕ unmet peer tsx@^4.8.1: found 3.14.0
+└─┬ vite 7.3.0
+  └── ✕ unmet peer tsx@^4.8.1: found 3.14.0
+
+packages/shared-hooks
+└─┬ vite 7.3.0
+  └── ✕ unmet peer tsx@^4.8.1: found 3.14.0
+
+packages/shared-ui
+└─┬ react-dom 19.2.3
+  └── ✕ unmet peer react@^19.2.3: found 18.3.1
+
+Done in 1m 44.5s
+Prisma schema loaded from prisma\schema.prisma
+
+✔ Generated Prisma Client (v6.19.0) to .\..\..\node_modules\.pnpm\@prisma+client@6.19.0_prisma@6.19.0_typescript@5.9.3\node_modules\@prisma\client in 1.43s
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Interested in query caching in just a few lines of code? Try Accelerate today! https://pris.ly/tip-3-accelerate
+

@@ -1,0 +1,69 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "apps/web-classic/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    },
+    {
+      "src": "apps/the-generator-nextjs/package.json",
+      "use": "@vercel/next"
+    },
+    {
+      "src": "apps/the-generator/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    },
+    {
+      "src": "apps/ghost-studio/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    },
+    {
+      "src": "apps/nova-post-pilot/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/generator",
+      "dest": "/apps/the-generator"
+    },
+    {
+      "src": "/ghost-studio",
+      "dest": "/apps/ghost-studio"
+    },
+    {
+      "src": "/nova-post",
+      "dest": "/apps/nova-post-pilot"
+    },
+    {
+      "src": "/nexus-visual",
+      "dest": "/apps/nexus-visual"
+    },
+    {
+      "src": "/sanctuary",
+      "dest": "/apps/sanctuary-social"
+    },
+    {
+      "src": "/admin",
+      "dest": "/apps/admin-panel"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key",
+    "NEXT_PUBLIC_API_URL": "@api_url",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@stripe_publishable_key"
+  }
+}

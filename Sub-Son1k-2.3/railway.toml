@@ -1,0 +1,55 @@
+[build]
+builder = "nixpacks"
+buildCommand = "cd packages/backend && pnpm install && pnpm run build"
+
+[deploy]
+startCommand = "cd packages/backend && pnpm run start"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+
+[env]
+NODE_ENV = "production"
+PORT = "3001"
+LOG_LEVEL = "info"
+
+# Database
+DATABASE_URL = { type = "postgresql", default = true }
+
+# Redis
+REDIS_URL = { type = "redis", default = true }
+
+# JWT
+JWT_SECRET = { generate = true }
+
+# Supabase
+SUPABASE_URL = { type = "string", required = true }
+SUPABASE_SERVICE_ROLE_KEY = { type = "string", required = true }
+
+# Suno API
+SUNO_API_URL = "https://ai.imgkits.com/suno"
+SUNO_POLLING_URL = "https://usa.imgkits.com/node-api/suno"
+SUNO_API_KEY = { type = "string", required = true }
+
+# Stripe (opcional - si no se configuran, solo plan FREE disponible)
+STRIPE_SECRET_KEY = { type = "string", required = false }
+STRIPE_WEBHOOK_SECRET = { type = "string", required = false }
+STRIPE_PRO_PRICE_ID = { type = "string", required = false }
+STRIPE_PREMIUM_PRICE_ID = { type = "string", required = false }
+STRIPE_ENTERPRISE_PRICE_ID = { type = "string", required = false }
+
+# Frontend URL
+FRONTEND_URL = { type = "string", required = true }
+
+# Backend Secret (for service-to-service authentication)
+BACKEND_SECRET = { type = "string", required = true }
+
+# Queue Configuration (optimized for scale)
+GENERATION_CONCURRENCY = "50"  # Increased from 5 to 50 for scale
+GENERATION_RATE_LIMIT = "100"  # Increased from 10 to 100 for scale
+# Token Pool Configuration
+MIN_TOKENS = "50"  # Increased for better availability
+MAX_TOKENS = "2000"  # Increased for scale
+ROTATION_INTERVAL = "180000"
+HEALTH_CHECK_INTERVAL = "30000"

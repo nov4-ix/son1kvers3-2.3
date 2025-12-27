@@ -1,0 +1,2 @@
+export { GhostStudio } from '../App';
+

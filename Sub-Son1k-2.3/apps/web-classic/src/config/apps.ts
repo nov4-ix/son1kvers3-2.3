@@ -17,7 +17,7 @@ export const APPS_CONFIG = {
         name: "Nova Post Pilot",
         path: "/nova",
         external: true,
-        externalUrl: "https://nova-post-pilot-27dl5sd8o-son1kvers3s-projects-c805d053.vercel.app",
+        externalUrl: "https://nova-post-pilot-dduaeh3an-son1kvers3s-projects.vercel.app",
         icon: "📊",
         description: "Marketing y analytics con IA",
         category: "primary",

@@ -19,246 +19,128 @@
   }
 
   .btn-primary {
-    @apply bg-gradient-to-r from-[#40FDAE] to-[#B858FE] text-black font-bold hover:scale-105 transition-transform;
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
   }
 
   .btn-secondary {
-    @apply bg-[#2a2d4a] text-white border border-[#40FDAE]/30 hover:border-[#40FDAE];
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
   }
 
   .btn-ghost {
-    @apply hover:bg-[#40FDAE]/10 hover:text-[#40FDAE];
+    @apply hover:bg-accent hover:text-accent-foreground;
+  }
+
+  .btn-sm {
+    @apply h-9 px-3;
+  }
+
+  .btn-md {
+    @apply h-10 py-2 px-4;
+  }
+
+  .btn-lg {
+    @apply h-11 px-8;
   }
 
   .card {
-    @apply rounded-xl border bg-card text-card-foreground shadow-lg backdrop-blur-xl;
+    @apply rounded-lg border bg-card text-card-foreground shadow-sm;
   }
 
   .input {
-    @apply flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#40FDAE] disabled:cursor-not-allowed disabled:opacity-50;
+    @apply flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
   }
 }
 
-/* SON1KVERS3 - NEXUS FUTURISM DESIGN SYSTEM */
-:root {
-  /* Nexus Colors - Identidad de Marca */
-  --nexus-cyan: #40FDAE;
-  --nexus-purple: #B858FE;
-  --nexus-blue: #00FFE7;
-
-  /* Dark Backgrounds */
-  --nexus-dark: #0A0C10;
-  --nexus-carbon: #1e2139;
-  --nexus-slate: #2a2d4a;
-
-  /* Semantic Colors */
-  --background: #0A0C10;
-  --foreground: #FFFFFF;
-  --card: rgba(30, 33, 57, 0.8);
-  --card-foreground: #FFFFFF;
-  --popover: rgba(30, 33, 57, 0.95);
-  --popover-foreground: #FFFFFF;
-  --primary: #40FDAE;
-  --primary-foreground: #000000;
-  --secondary: #2a2d4a;
-  --secondary-foreground: #FFFFFF;
-  --muted: #6B7280;
-  --muted-foreground: #9FA6B2;
-  --accent: #B858FE;
-  --accent-foreground: #FFFFFF;
-  --destructive: #FF1744;
-  --destructive-foreground: #FFFFFF;
-  --border: rgba(64, 253, 174, 0.2);
-  --input: rgba(255, 255, 255, 0.1);
-  --ring: #40FDAE;
-  --radius: 0.75rem;
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
 }
 
-/* Typography System */
+/* Xentric Corp - Corporate Grayscale Theme */
+:root {
+  --background: #FFFFFF;
+  --foreground: #1A1A1A;
+  --card: #F5F5F5;
+  --card-foreground: #1A1A1A;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1A1A;
+  --primary: #2A2A2A;
+  --primary-foreground: #FFFFFF;
+  --secondary: #6B6B6B;
+  --secondary-foreground: #FFFFFF;
+  --muted: #E5E5E5;
+  --muted-foreground: #737373;
+  --accent: #404040;
+  --accent-foreground: #FFFFFF;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --border: #D4D4D4;
+  --input: #E5E5E5;
+  --ring: #404040;
+  --radius: 0.25rem;
+}
+
+/* Corporate Professional Styles */
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   letter-spacing: -0.01em;
-  background: linear-gradient(135deg, #0A0C10 0%, #1e2139 100%);
-  background-attachment: fixed;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: 'Orbitron', 'Inter', sans-serif;
-  font-weight: 700;
+/* Clean Corporate Header */
+.corporate-header {
+  background: linear-gradient(135deg, #2A2A2A 0%, #1A1A1A 100%);
+  border-bottom: 1px solid #D4D4D4;
 }
 
-/* Glassmorphism Signature */
-.glass-nexus {
-  background: rgba(30, 33, 57, 0.7);
-  backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(64, 253, 174, 0.2);
+/* Subtle Corporate Shadows */
+.corporate-shadow {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
-/* Glow Effects */
-.glow-cyan {
-  box-shadow: 0 0 20px rgba(64, 253, 174, 0.3),
-    0 0 40px rgba(64, 253, 174, 0.1);
+.corporate-shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-.glow-purple {
-  box-shadow: 0 0 20px rgba(184, 88, 254, 0.3),
-    0 0 40px rgba(184, 88, 254, 0.1);
+/* Professional Hover States */
+.corporate-hover {
+  transition: all 0.2s ease-in-out;
 }
 
-.glow-blue {
-  box-shadow: 0 0 20px rgba(0, 255, 231, 0.3),
-    0 0 40px rgba(0, 255, 231, 0.1);
+.corporate-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-/* Gradient Text */
-.gradient-text-nexus {
-  background: linear-gradient(to right, #40FDAE, #B858FE);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+/* Static Logo - No Animations */
+.static-logo {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #FFFFFF;
+  transition: opacity 0.2s ease;
 }
 
-/* Nexus Cards */
-.nexus-card {
-  background: rgba(30, 33, 57, 0.8);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(64, 253, 174, 0.2);
-  border-radius: 1rem;
-  transition: all 0.3s ease;
+.static-logo:hover {
+  opacity: 0.85;
 }
 
-.nexus-card:hover {
-  border-color: rgba(64, 253, 174, 0.5);
-  box-shadow: 0 0 30px rgba(64, 253, 174, 0.15);
-  transform: translateY(-2px);
+/* Minimal Grid Background */
+.minimal-grid {
+  background-image:
+    linear-gradient(rgba(212, 212, 212, 0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 212, 212, 0.15) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
-/* Animated Background */
-@keyframes gradient-shift {
-
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
+/* Professional Card Styles */
+.professional-card {
+  background: white;
+  border: 1px solid #E5E5E5;
+  border-radius: 0.5rem;
+  transition: border-color 0.2s ease;
 }
 
-.animated-bg {
-  background: linear-gradient(135deg,
-      #0A0C10 0%,
-      #1e2139 25%,
-      #0A0C10 50%,
-      #1e2139 75%,
-      #0A0C10 100%);
-  background-size: 200% 200%;
-  animation: gradient-shift 15s ease infinite;
-}
-
-/* Floating Animation */
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.float-animation {
-  animation: float 3s ease-in-out infinite;
-}
-
-/* Pulse Glow */
-@keyframes pulse-glow {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-/* Shimmer Effect */
-@keyframes shimmer {
-  0% {
-    background-position: -1000px 0;
-  }
-
-  100% {
-    background-position: 1000px 0;
-  }
-}
-
-.shimmer {
-  background: linear-gradient(90deg,
-      transparent,
-      rgba(64, 253, 174, 0.1),
-      transparent);
-  background-size: 1000px 100%;
-  animation: shimmer 2s infinite;
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: #1e2139;
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #40FDAE, #B858FE);
-  border-radius: 5px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #B858FE, #40FDAE);
-}
-
-/* Selection Styling */
-::selection {
-  background: rgba(64, 253, 174, 0.3);
-  color: white;
-}
-
-::-moz-selection {
-  background: rgba(64, 253, 174, 0.3);
-  color: white;
-}
-
-/* Focus Rings */
-*:focus-visible {
-  outline: 2px solid #40FDAE;
-  outline-offset: 2px;
-}
-
-/* Smooth Transitions */
-* {
-  transition: border-color 0.2s ease, background-color 0.2s ease;
-}
-
-/* Backdrop Effects */
-.backdrop-nexus {
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+.professional-card:hover {
+  border-color: #B8B8B8;
 }

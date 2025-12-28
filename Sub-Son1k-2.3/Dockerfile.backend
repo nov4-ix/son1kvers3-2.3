@@ -2,10 +2,10 @@
 FROM node:20-slim
 
 # Install system dependencies (openssl for Prisma)
-RUN apt-get update -y && apt-get install -y openssl
+RUN apt-get update -y && apt-get install -y openssl && apt-get clean
 
-# Install pnpm
-RUN npm install -g pnpm
+# Install pnpm with specific version
+RUN npm install -g pnpm@8.9.0
 
 # Set working directory
 WORKDIR /app

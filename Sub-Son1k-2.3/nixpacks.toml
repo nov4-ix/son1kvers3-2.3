@@ -1,0 +1,18 @@
+[phases.setup]
+nixPkgs = ['nodejs_20', 'openssl']
+
+[phases.install]
+cmds = [
+  'npm install -g pnpm@8.9.0',
+  'pnpm install --frozen-lockfile'
+]
+
+[phases.build]
+cmds = [
+  'cd packages/backend',
+  'npx prisma generate',
+  'pnpm run build'
+]
+
+[start]
+cmd = 'cd packages/backend && node dist/index.js'

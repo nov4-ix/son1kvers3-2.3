@@ -5,7 +5,7 @@ export const APPS_CONFIG = {
         name: "The Generator",
         path: "/generator",
         external: true,
-        externalUrl: "https://the-generator-gpzj6pn9y-son1kvers3s-projects-c805d053.vercel.app",
+        externalUrl: "https://the-generator-nextjs-git-main-son1kvers3s-projects-c805d053.vercel.app",
         icon: "🎵",
         description: "Generador completo de música con IA",
         category: "primary",

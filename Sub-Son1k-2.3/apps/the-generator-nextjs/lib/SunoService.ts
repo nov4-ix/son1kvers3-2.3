@@ -98,10 +98,19 @@ class SunoService {
 
                 const track = results[0];
                 console.log('[Suno Polling] Status:', track.status);
+                console.log('[Suno Polling] Has audio_url:', !!track.audio_url);
 
-                if (track.status === 'complete' && track.audio_url) {
-                    console.log('[Suno Polling] ✅ Complete!');
+                // ✅ ARREGLADO: Detectar completitud si audio_url existe, independiente del status
+                if (track.audio_url) {
+                    console.log('[Suno Polling] ✅ Audio ready! URL:', track.audio_url);
                     return track;
+                }
+
+                // Si ya dice "complete" pero no hay URL aún, esperar más
+                if (track.status === 'complete' && !track.audio_url) {
+                    console.log('[Suno Polling] Status complete but no URL yet, waiting...');
+                    await this.sleep(this.POLL_INTERVAL);
+                    continue;
                 }
 
                 if (track.status === 'error') {

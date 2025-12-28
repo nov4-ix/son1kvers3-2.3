@@ -1,7 +1,8 @@
+```json
 {
-    "buildCommand": "pnpm build",
-    "devCommand": "pnpm dev",
-    "installCommand": "pnpm install --no-frozen-lockfile",
+    "buildCommand": "npm run build",
+    "installCommand": "npm install --legacy-peer-deps",
     "framework": "nextjs",
     "outputDirectory": ".next"
 }
+```

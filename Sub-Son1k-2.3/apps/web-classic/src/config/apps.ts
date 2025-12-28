@@ -5,38 +5,39 @@ export const APPS_CONFIG = {
         name: "The Generator",
         path: "/generator",
         external: true,
-        externalUrl: "https://the-generator-gpzj6pn9y-son1kvers3s-projects.vercel.app",
+        externalUrl: "https://the-generator-gpzj6pn9y-son1kvers3s-projects-c805d053.vercel.app",
         icon: "🎵",
         description: "Generador completo de música con IA",
         category: "primary",
         status: "active"
     },
 
-    // Ghost Studio - LISTO PARA DEPLOY
-    ghostStudio: {
-        name: "Ghost Studio",
-        path: "/ghost-studio",
-        external: true,
-        externalUrl: "#", // Se actualizará después del deploy
-        icon: "🎛️",
-        description: "Mini DAW para covers y edición de audio",
-        category: "primary",
-        status: "pending"
-    },
-
-    // Nova Post Pilot - LISTO PARA DEPLOY
+    // Nova Post Pilot - FUNCIONANDO
     novaPostPilot: {
         name: "Nova Post Pilot",
         path: "/nova",
         external: true,
-        externalUrl: "#", // Se actualizará después del deploy
+        externalUrl: "https://nova-post-pilot-27dl5sd8o-son1kvers3s-projects-c805d053.vercel.app",
         icon: "📊",
         description: "Marketing y analytics con IA",
         category: "primary",
-        status: "pending"
+        status: "active"
     },
 
-    // El Santuario (Live Collaboration) - EN DESARROLLO
+    // Ghost Studio - PRÓXIMAMENTE
+    ghostStudio: {
+        name: "Ghost Studio",
+        path: "/ghost-studio",
+        external: true,
+        externalUrl: "#",
+        icon: "🎛️",
+        description: "Mini DAW para covers y edición de audio",
+        category: "primary",
+        status: "pending",
+        comingSoon: true
+    },
+
+    // El Santuario (Live Collaboration) - PRÓXIMAMENTE
     elSantuario: {
         name: "El Santuario",
         path: "/santuario",
@@ -45,7 +46,7 @@ export const APPS_CONFIG = {
         icon: "🏛️",
         description: "Colaboraciones y chat en tiempo real",
         category: "social",
-        status: "development", // No está listo para deploy aún
+        status: "development",
         comingSoon: true
     }
 };

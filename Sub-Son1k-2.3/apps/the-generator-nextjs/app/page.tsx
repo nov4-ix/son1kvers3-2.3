@@ -1,10 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { tokenManager } from '@/lib/TokenManager';
 import { sunoService } from '@/lib/SunoService';
-import TokenManagerComponent from '@/components/TokenManager';
-import { Music, Sparkles, Download, Loader2, Settings } from 'lucide-react';
+import { Music, Sparkles, Download, Loader2 } from 'lucide-react';
 
 export default function TheGenerator() {
   const [prompt, setPrompt] = useState('');
@@ -15,17 +13,10 @@ export default function TheGenerator() {
   const [pollingAttempt, setPollingAttempt] = useState(0);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showTokenManager, setShowTokenManager] = useState(false);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       alert('Por favor escribe un prompt');
-      return;
-    }
-
-    if (!tokenManager.hasTokens()) {
-      alert('⚠️ Necesitas agregar tokens JWT primero');
-      setShowTokenManager(true);
       return;
     }
 
@@ -81,24 +72,10 @@ export default function TheGenerator() {
               The Generator
             </h1>
           </div>
-          <p className="text-gray-300 text-lg mb-4">
+          <p className="text-gray-300 text-lg">
             Son1kvers3 - Plataforma de Generación Musical con IA
           </p>
-          <button
-            onClick={() => setShowTokenManager(!showTokenManager)}
-            className="text-purple-400 hover:text-purple-300 underline text-sm flex items-center gap-2 mx-auto"
-          >
-            <Settings className="w-4 h-4" />
-            {showTokenManager ? 'Ocultar' : 'Configurar'} Tokens JWT
-          </button>
         </header>
-
-        {/* Token Manager */}
-        {showTokenManager && (
-          <div className="mb-8">
-            <TokenManagerComponent />
-          </div>
-        )}
 
         {/* Error Alert */}
         {error && (
@@ -281,9 +258,6 @@ export default function TheGenerator() {
             Son1kvers3 - Democratización Musical Global
           </p>
           <p>Powered by Claude AI + Suno AI</p>
-          <p className="mt-4 text-xs">
-            💡 Tip: Instala la Chrome Extension para captura automática de tokens
-          </p>
         </footer>
       </div>
     </div>

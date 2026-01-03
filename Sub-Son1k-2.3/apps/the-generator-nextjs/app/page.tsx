@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { sunoService } from '@/lib/SunoService';
+import LyricsStudio from '@/components/LyricsStudio';
 import { Music, Sparkles, Download, Loader2 } from 'lucide-react';
 
 export default function TheGenerator() {
@@ -13,6 +14,12 @@ export default function TheGenerator() {
   const [pollingAttempt, setPollingAttempt] = useState(0);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Lyrics Studio state
+  const [showLyricsStudio, setShowLyricsStudio] = useState(false);
+  const [generatedLyrics, setGeneratedLyrics] = useState('');
+  const [generatedTitle, setGeneratedTitle] = useState('');
+  const [generatedStyle, setGeneratedStyle] = useState('');
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -29,37 +36,77 @@ export default function TheGenerator() {
     const steps = [
       "🧠 Pixel AI analizando tu idea...",
       "✍️ Componiendo letra y estructura...",
-      "🎹 Orquestando arreglo musical...",
-      "🚀 Iniciando Son1k Neural Engine...",
+      "🎹 Optimizando arreglo musical...",
     ];
 
     let stepIndex = 0;
     setProgress(steps[0]);
 
-    // Rotar mensajes cada 2.5s mientras el backend procesa
+    // Rotar mensajes cada 2s mientras Groq genera
     const loadingInterval = setInterval(() => {
       stepIndex = (stepIndex + 1) % steps.length;
-      // Solo actualizar si seguimos en los primeros pasos (antes del polling de audio)
       if (stepIndex < steps.length) {
         setProgress(steps[stepIndex]);
       }
-    }, 2500);
+    }, 2000);
 
     try {
-      // Paso 1: Generar
+      // Paso 1: Generar SOLO LETRAS con Groq
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000';
+      const lyricsResponse = await fetch(`${backendUrl}/api/generation/lyrics`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          style: tags || 'any'
+        })
+      });
+
+      if (!lyricsResponse.ok) {
+        throw new Error('Failed to generate lyrics');
+      }
+
+      const lyricsData = await lyricsResponse.json();
+      clearInterval(loadingInterval);
+
+      // Guardar letras generadas y mostrar Lyrics Studio
+      setGeneratedLyrics(lyricsData.data.lyrics);
+      setGeneratedTitle(lyricsData.data.title);
+      setGeneratedStyle(lyricsData.data.style);
+      setShowLyricsStudio(true);
+      setGenerating(false);
+
+    } catch (err: any) {
+      clearInterval(loadingInterval);
+      console.error('[Generator] Error:', err);
+      setError(err.message || 'Error al generar letras');
+      setGenerating(false);
+      setProgress('');
+    }
+  };
+
+  // Handler para regenerar letras
+  const handleRegenerateLyrics = async () => {
+    setShowLyricsStudio(false);
+    handleGenerate(); // Volver a generar
+  };
+
+  // Handler para aprobar y generar música
+  const handleApproveLyrics = async (finalLyrics: string, finalTitle: string) => {
+    setShowLyricsStudio(false);
+    setGenerating(true);
+    setProgress('🚀 Son1k Neural Engine renderizando audio...');
+
+    try {
+      // Ahora enviamos las letras aprobadas a Suno
       const taskId = await sunoService.generate({
-        gpt_description_prompt: prompt,
-        tags: tags || undefined,
-        title: title || undefined,
+        prompt: finalLyrics, // Letras como prompt (custom mode)
+        tags: generatedStyle,
+        title: finalTitle,
         make_instrumental: false
       });
 
-      clearInterval(loadingInterval); // Detener rotación de mensajes "creativos"
-
-      // Paso 2: Polling con contador visual
-      setProgress(`🎵 Son1k Neural Engine renderizando audio...`);
-
-      // Actualizar progreso de polling cada 5 segundos
+      // Polling
       const pollInterval = setInterval(() => {
         setPollingAttempt(prev => prev + 1);
       }, 5000);
@@ -68,13 +115,11 @@ export default function TheGenerator() {
 
       clearInterval(pollInterval);
 
-      // Paso 3: Mostrar resultado
-      setProgress('✅ ¡Completado! Descargando assets...');
+      setProgress('✅ ¡Completado!');
       setResult(completedTrack);
       setGenerating(false);
 
     } catch (err: any) {
-      clearInterval(loadingInterval);
       console.error('[Generator] Error:', err);
       setError(err.message || 'Error desconocido');
       setGenerating(false);
@@ -84,6 +129,21 @@ export default function TheGenerator() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-black text-white">
+      {/* Lyrics Studio Modal */}
+      {showLyricsStudio && (
+        <LyricsStudio
+          initialLyrics={generatedLyrics}
+          initialTitle={generatedTitle}
+          initialStyle={generatedStyle}
+          onApprove={handleApproveLyrics}
+          onRegenerate={handleRegenerateLyrics}
+          onClose={() => {
+            setShowLyricsStudio(false);
+            setGenerating(false);
+          }}
+        />
+      )}
+
       <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <header className="text-center mb-8">

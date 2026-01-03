@@ -24,11 +24,29 @@ export default function TheGenerator() {
     setError(null);
     setResult(null);
     setPollingAttempt(0);
-    setProgress('Iniciando generación...');
+
+    // Secuencia de mensajes de carga "inteligente"
+    const steps = [
+      "🧠 Pixel AI analizando tu idea...",
+      "✍️ Componiendo letra y estructura...",
+      "🎹 Orquestando arreglo musical...",
+      "🚀 Iniciando Son1k Neural Engine...",
+    ];
+
+    let stepIndex = 0;
+    setProgress(steps[0]);
+
+    // Rotar mensajes cada 2.5s mientras el backend procesa
+    const loadingInterval = setInterval(() => {
+      stepIndex = (stepIndex + 1) % steps.length;
+      // Solo actualizar si seguimos en los primeros pasos (antes del polling de audio)
+      if (stepIndex < steps.length) {
+        setProgress(steps[stepIndex]);
+      }
+    }, 2500);
 
     try {
       // Paso 1: Generar
-      setProgress('🎵 Enviando request a Suno API...');
       const taskId = await sunoService.generate({
         gpt_description_prompt: prompt,
         tags: tags || undefined,
@@ -36,10 +54,12 @@ export default function TheGenerator() {
         make_instrumental: false
       });
 
-      // Paso 2: Polling con contador visual
-      setProgress(`⏳ Generando música (taskId: ${taskId})...`);
+      clearInterval(loadingInterval); // Detener rotación de mensajes "creativos"
 
-      // Actualizar progreso cada 5 segundos
+      // Paso 2: Polling con contador visual
+      setProgress(`🎵 Son1k Neural Engine renderizando audio...`);
+
+      // Actualizar progreso de polling cada 5 segundos
       const pollInterval = setInterval(() => {
         setPollingAttempt(prev => prev + 1);
       }, 5000);
@@ -49,11 +69,12 @@ export default function TheGenerator() {
       clearInterval(pollInterval);
 
       // Paso 3: Mostrar resultado
-      setProgress('✅ ¡Completado!');
+      setProgress('✅ ¡Completado! Descargando assets...');
       setResult(completedTrack);
       setGenerating(false);
 
     } catch (err: any) {
+      clearInterval(loadingInterval);
       console.error('[Generator] Error:', err);
       setError(err.message || 'Error desconocido');
       setGenerating(false);

@@ -142,6 +142,97 @@ export function generationRoutes(musicGenerationService: MusicGenerationService,
       }
     });
 
+    // Generate lyrics only (for Lyrics Studio)
+    fastify.post('/lyrics', async (request, reply) => {
+      const { prompt, style } = request.body as any;
+
+      try {
+        if (!prompt) {
+          return reply.code(400).send({
+            success: false,
+            error: {
+              code: 'INVALID_INPUT',
+              message: 'prompt is required'
+            }
+          });
+        }
+
+        // Import generateSongStructure from worker
+        const axios = require('axios');
+        const GROQ_API_KEY = process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY;
+
+        if (!GROQ_API_KEY) {
+          return reply.code(503).send({
+            success: false,
+            error: {
+              code: 'SERVICE_UNAVAILABLE',
+              message: 'Lyrics generation service not configured'
+            }
+          });
+        }
+
+        console.log('🧠 Generating lyrics with Groq...');
+        const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+          model: "llama3-70b-8192",
+          messages: [
+            {
+              role: "system",
+              content: `You are a world-class Songwriter and Music Producer AI. Your goal is to turn a simple user prompt into a hit song structure.
+              
+              OUTPUT FORMAT (JSON ONLY):
+              {
+                  "title": "Creative Song Title",
+                  "style": "Enhanced Music Style (e.g., 'Uplifting Pop, 120bpm, Female Vocals, Synthesizer')",
+                  "lyrics": "Complete song lyrics with structure tags [Verse], [Chorus], [Bridge], etc."
+              }
+              
+              RULES:
+              1. Lyrics MUST be structured with [Verse], [Chorus], [Bridge], [Outro].
+              2. Use metatags like [Instrumental Solo], [Drop], [Slow Down] if appropriate.
+              3. Determine the best style if user's style is vague.
+              4. Lyrics should be creative, rhyming, and fit the mood.
+              5. Return ONLY valid JSON.`
+            },
+            {
+              role: "user",
+              content: `User Prompt: "${prompt}". User Style Preference: "${style || 'Any'}". 
+              Create a full song structure.`
+            }
+          ],
+          response_format: { type: "json_object" }
+        }, {
+          headers: {
+            'Authorization': `Bearer ${GROQ_API_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const content = response.data.choices[0].message.content;
+        const result = JSON.parse(content);
+
+        console.log(`🧠 Groq generated: "${result.title}" (${result.style})`);
+
+        return {
+          success: true,
+          data: {
+            title: result.title,
+            lyrics: result.lyrics,
+            style: result.style
+          }
+        };
+
+      } catch (error: any) {
+        console.error('Lyrics generation error:', error);
+        return reply.code(500).send({
+          success: false,
+          error: {
+            code: 'LYRICS_GENERATION_FAILED',
+            message: error.message || 'Failed to generate lyrics'
+          }
+        });
+      }
+    });
+
     // Get generation status
     fastify.get('/:id/status', {
       preHandler: [authMiddleware]

@@ -527,33 +527,38 @@ export const TheGeneratorExpress = () => {
             </section>
 
             {/* Tools Section */}
-            <section className="py-16 px-6 bg-gradient-to-b from-transparent to-[#122024]/30">
+            <section id="herramientas" className="py-16 px-6 bg-gradient-to-b from-transparent to-[#122024]/30">
                 <div className="max-w-7xl mx-auto">
                     <h3 className="text-3xl font-bold mb-12 text-center">Herramientas Creativas</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <a href="/generator" className="block rounded-xl border border-white/10 bg-[#1C232E] hover:border-[#B858FE]/50 transition-all group cursor-pointer p-6">
+                        <a href="https://the-generator.son1kvers3.com" target="_blank" rel="noopener noreferrer" className="block rounded-xl border border-white/10 bg-[#1C232E] hover:border-[#B858FE]/50 transition-all group cursor-pointer p-6">
                             <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#B858FE] to-[#047AF6] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                 <Sparkles className="w-7 h-7 text-white" />
                             </div>
                             <h4 className="text-xl font-bold mb-2 text-white">The Generator</h4>
-                            <p className="text-white/60">Crea música desde cero con IA avanzada</p>
-                            <span className="text-[#40FDAE] group-hover:text-[#15A4A2] text-sm mt-4 underline-offset-4 group-hover:underline inline-block">Explorar →</span>
+                            <p className="text-white/60 mb-3">Generador completo con 6 Perillas Literarias</p>
+                            <div className="flex flex-wrap gap-2 mb-3">
+                                <span className="text-[9px] bg-[#40FDAE] text-black px-2 py-1 rounded font-bold">COMPLETO</span>
+                                <span className="text-[9px] bg-[#B858FE] text-white px-2 py-1 rounded font-bold">6 PERILLAS</span>
+                                <span className="text-[9px] bg-gradient-to-r from-[#B858FE] to-[#047AF6] text-white px-2 py-1 rounded font-bold">ÚNICO</span>
+                            </div>
+                            <span className="text-[#40FDAE] group-hover:text-[#15A4A2] text-sm underline-offset-4 group-hover:underline inline-block">Abrir The Generator →</span>
                         </a>
-                        <a href="/ghost-studio" className="block rounded-xl border border-white/10 bg-[#1C232E] hover:border-[#B858FE]/50 transition-all group cursor-pointer p-6">
-                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#15A4A2] to-[#40FDAE] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <div className="block rounded-xl border border-white/10 bg-[#1C232E] opacity-60 p-6 relative">
+                            <div className="absolute top-4 right-4 text-xs bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded">Próximamente</div>
+                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#15A4A2] to-[#40FDAE] flex items-center justify-center mb-4">
                                 <Wand2 className="w-7 h-7 text-white" />
                             </div>
                             <h4 className="text-xl font-bold mb-2 text-white">Ghost Studio</h4>
                             <p className="text-white/60">Edición profesional y mezcla de stems</p>
-                            <span className="text-[#40FDAE] group-hover:text-[#15A4A2] text-sm mt-4 underline-offset-4 group-hover:underline inline-block">Explorar →</span>
-                        </a>
-                        <a href="/nova-post-pilot" className="block rounded-xl border border-white/10 bg-[#1C232E] hover:border-[#B858FE]/50 transition-all group cursor-pointer p-6">
+                        </div>
+                        <a href="https://nova.son1kvers3.com" target="_blank" rel="noopener noreferrer" className="block rounded-xl border border-white/10 bg-[#1C232E] hover:border-[#B858FE]/50 transition-all group cursor-pointer p-6">
                             <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#047AF6] to-[#15A4A2] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                 <ImageIcon className="w-7 h-7 text-white" />
                             </div>
                             <h4 className="text-xl font-bold mb-2 text-white">Nova Post Pilot</h4>
-                            <p className="text-white/60">Automatiza tu presencia en redes sociales</p>
-                            <span className="text-[#40FDAE] group-hover:text-[#15A4A2] text-sm mt-4 underline-offset-4 group-hover:underline inline-block">Explorar →</span>
+                            <p className="text-white/60 mb-3">Automatiza tu presencia en redes sociales</p>
+                            <span className="text-[#40FDAE] group-hover:text-[#15A4A2] text-sm underline-offset-4 group-hover:underline inline-block">Explorar →</span>
                         </a>
                     </div>
                 </div>

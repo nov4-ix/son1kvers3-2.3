@@ -5,11 +5,12 @@ export const APPS_CONFIG = {
         name: "The Generator",
         path: "/generator",
         external: true,
-        externalUrl: "https://the-generator-nextjs-git-main-son1kvers3s-projects-c805d053.vercel.app",
+        externalUrl: "https://the-generator.son1kvers3.com",
         icon: "🎵",
-        description: "Generador completo de música con IA",
+        description: "Generador completo con 6 Perillas Literarias y Lyric Studio",
         category: "primary",
-        status: "active"
+        status: "active",
+        features: ["6 Perillas Literarias", "Lyric Studio", "Optimizador de Prompts"]
     },
 
     // Nova Post Pilot - FUNCIONANDO
@@ -17,7 +18,7 @@ export const APPS_CONFIG = {
         name: "Nova Post Pilot",
         path: "/nova",
         external: true,
-        externalUrl: "https://nova-post-pilot-dduaeh3an-son1kvers3s-projects.vercel.app",
+        externalUrl: "https://nova.son1kvers3.com",
         icon: "📊",
         description: "Marketing y analytics con IA",
         category: "primary",

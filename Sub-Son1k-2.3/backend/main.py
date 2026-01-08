@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .database import engine, Base
-from .services.tiers import tier_manager
-from .services.community import pool_manager
-from .services.stealth import stealth_manager
-from .services.alvae import alvae_system
-from .services.pixel import pixel_companion
+from database import engine, Base
+from services.tiers import tier_manager
+from services.community import pool_manager
+from services.stealth import stealth_manager
+from services.alvae import alvae_system
+from services.pixel import pixel_companion
 
 # Create database tables
 Base.metadata.create_all(bind=engine)

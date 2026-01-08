@@ -1,0 +1,12 @@
+[
+  {
+    "id": "proxy_1",
+    "url": "http://username:password@proxy-server:port",
+    "is_active": true
+  },
+  {
+    "id": "proxy_2",
+    "url": "http://username:password@proxy-server-2:port",
+    "is_active": true
+  }
+]

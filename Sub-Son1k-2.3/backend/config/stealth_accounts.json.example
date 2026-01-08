@@ -1,0 +1,23 @@
+[
+  {
+    "id": "account_1",
+    "email": "your-email-1@example.com",
+    "cookie": "your_suno_cookie_here",
+    "session_id": "your_session_id_here",
+    "is_active": true
+  },
+  {
+    "id": "account_2",
+    "email": "your-email-2@example.com",
+    "cookie": "your_suno_cookie_here",
+    "session_id": "your_session_id_here",
+    "is_active": true
+  },
+  {
+    "id": "account_3",
+    "email": "your-email-3@example.com",
+    "cookie": "your_suno_cookie_here",
+    "session_id": "your_session_id_here",
+    "is_active": true
+  }
+]

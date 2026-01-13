@@ -14,6 +14,24 @@ export class CreditService {
 
         // Create if not exists with default values
         if (!credits) {
+            // First, ensure the user exists in the users table
+            let user = await this.prisma.user.findUnique({
+                where: { id: userId }
+            });
+
+            if (!user) {
+                // Create user if doesn't exist
+                user = await this.prisma.user.create({
+                    data: {
+                        id: userId,
+                        email: `${userId}@temp.local`,
+                        username: userId,
+                        tier: 'FREE'
+                    }
+                });
+            }
+
+            // Now create credits
             credits = await this.prisma.userCredits.create({
                 data: {
                     userId,

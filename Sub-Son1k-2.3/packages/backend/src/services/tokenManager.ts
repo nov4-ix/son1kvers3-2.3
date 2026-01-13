@@ -394,9 +394,7 @@ export class TokenManager extends EventEmitter {
           headers: {
             'authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
-            'channel': 'node-api',
-            'origin': 'https://www.livepolls.app',
-            'referer': 'https://www.livepolls.app/'
+            'channel': 'node-api'
           },
           validateStatus: (status) => status < 500
         });
@@ -429,9 +427,7 @@ export class TokenManager extends EventEmitter {
         headers: {
           'authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
-          'channel': 'node-api',
-          'origin': 'https://www.livepolls.app',
-          'referer': 'https://www.livepolls.app/'
+          'channel': 'node-api'
         },
         validateStatus: (status) => status < 500 // Aceptar todo excepto errores de servidor
       });

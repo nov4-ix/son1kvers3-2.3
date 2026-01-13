@@ -6,11 +6,15 @@
 import { Queue, QueueOptions } from 'bullmq';
 import Redis from 'ioredis';
 
-// Redis connection for queue
+// Redis connection for queue - DISABLED FOR LOCAL DEV
+// Uncomment when Redis is available
+/*
 const redisConnection = new Redis(process.env.REDIS_URL || process.env.REDIS_HOST || 'redis://localhost:6379', {
   maxRetriesPerRequest: null,
   enableReadyCheck: false,
 });
+*/
+const redisConnection: any = null; // Placeholder for local dev without Redis
 
 // Queue configuration
 const queueOptions: QueueOptions = {

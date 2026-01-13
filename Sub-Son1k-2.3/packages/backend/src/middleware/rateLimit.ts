@@ -3,16 +3,17 @@ import Redis from 'ioredis'
 import { AuthenticatedRequest } from './auth'
 import { generateDeviceFingerprint } from './security'
 
-// Redis client for rate limiting
-const redisUrl = process.env.REDIS_URL
-const redis = redisUrl
-  ? new Redis(redisUrl, { maxRetriesPerRequest: 3 })
-  : new Redis({
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    password: process.env.REDIS_PASSWORD,
-    maxRetriesPerRequest: 3,
-  })
+// Redis client for rate limiting - DISABLED FOR LOCAL DEV
+const redisUrl = process.env.REDIS_URL;
+// const redis = redisUrl
+//   ? new Redis(redisUrl, { maxRetriesPerRequest: 3 })
+//   : new Redis({
+//     host: process.env.REDIS_HOST || 'localhost',
+//     port: parseInt(process.env.REDIS_PORT || '6379'),
+//     password: process.env.REDIS_PASSWORD,
+//     maxRetriesPerRequest: 3,
+//   });
+const redis: any = null; // Placeholder for local dev without Redis
 
 interface RateLimitConfig {
   maxRequests: number
@@ -43,6 +44,16 @@ async function checkRateLimit(
   key: string,
   config: RateLimitConfig
 ): Promise<RateLimitCheck> {
+  // If Redis is not available, allow all requests
+  if (!redis) {
+    return {
+      exceeded: false,
+      limit: config.maxRequests,
+      remaining: config.maxRequests,
+      resetTime: Math.ceil((Date.now() + config.windowMs) / 1000),
+    };
+  }
+
   const currentCount = await redis.get(key)
   const count = currentCount ? parseInt(currentCount) : 0
   const windowSeconds = Math.ceil(config.windowMs / 1000)
@@ -161,5 +172,7 @@ export async function rateLimitMiddleware(request: FastifyRequest, reply: Fastif
 
 // Cleanup function for graceful shutdown
 export async function cleanupRateLimit() {
-  await redis.quit()
+  if (redis) {
+    await redis.quit();
+  }
 }

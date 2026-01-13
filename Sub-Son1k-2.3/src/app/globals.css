@@ -55,17 +55,15 @@
   }
 }
 
-/* Inter font variables */
-.inter_e5387405-module__6kjfMG__variable {
+/* Font variables - fixed class names */
+.font-inter {
   --font-inter: 'Inter', 'Poppins', sans-serif;
 }
 
-/* Orbitron font variables */
-.orbitron_5d61b861-module__tzdIhq__variable {
+.font-orbitron {
   --font-orbitron: 'Orbitron', 'Biometric W95', monospace;
 }
 
-/* Space Mono font variables */
-.space_mono_6ea683de-module__e0u9Iq__variable {
+.font-space-mono {
   --font-space-mono: 'Space Mono', 'JetBrains Mono', monospace;
 }

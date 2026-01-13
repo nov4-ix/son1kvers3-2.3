@@ -50,7 +50,7 @@ export default function HomePage() {
               <Play className="w-6 h-6 mr-2" />
               The Generator
             </Button>
-            <Button variant="outline" className="border-[#40FDAE] text-[#40FDAE] hover:bg-[#40FDAE]/20 shadow-lg shadow-[#40FDAE]/30" size="lg" onClick={() => window.location.href = '/CODEX_MAESTRO.html'}>
+            <Button variant="outline" className="border-[#40FDAE] text-[#40FDAE] hover:bg-[#40FDAE]/20 shadow-lg shadow-[#40FDAE]/30" size="lg" onClick={() => alert('Códex Maestro - Próximamente disponible')}>
               <Download className="w-6 h-6 mr-2" />
               Códex Maestro
             </Button>

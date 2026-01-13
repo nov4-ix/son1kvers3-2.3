@@ -1,0 +1,10 @@
+# Son1kVers3 Backend - ULTRA MINIMAL (sin compilación)
+# Versiones que NO requieren Rust ni compilación
+
+fastapi==0.95.0
+uvicorn==0.21.0
+sqlalchemy==2.0.23
+stripe==7.4.0
+python-multipart==0.0.6
+pydantic==1.10.13  # Versión antigua sin Rust
+python-dotenv==1.0.0

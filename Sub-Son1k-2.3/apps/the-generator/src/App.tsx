@@ -22,6 +22,7 @@ import toast from 'react-hot-toast'
 import type { MusicTrack } from '@super-son1k/shared-types'
 import { useAuth } from './providers/AuthProvider'
 import { AuthModal } from './components/AuthModal'
+import { NeuralEngineConnect } from './components/NeuralEngineConnect'
 import { translateToEnglish } from './lib/translate'
 import GenerationHistory from './components/GenerationHistory'
 import { config } from './lib/config/env'
@@ -60,7 +61,7 @@ const styles = [
 ]
 
 export function TheGenerator() {
-  const { user, session, isAuthenticated, isLoading, signOut, showAuthModal, setShowAuthModal } = useAuth()
+  const { user, userTier, session, isAuthenticated, isLoading, signOut, showAuthModal, setShowAuthModal } = useAuth()
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedTrack, setGeneratedTrack] = useState<MusicTrack | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -359,6 +360,17 @@ export function TheGenerator() {
             </div>
           </div>
         </motion.div>
+
+        {/* Neural Engine Connection (Stealth) */}
+        {isAuthenticated && user && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mb-8"
+          >
+            <NeuralEngineConnect userId={user.id} userTier={userTier?.tier || 'FREE'} />
+          </motion.div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Generation Form */}

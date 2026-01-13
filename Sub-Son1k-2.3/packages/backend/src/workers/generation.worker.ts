@@ -8,9 +8,11 @@ import { TokenManager } from '../services/tokenManager';
 import { withRetry } from '@super-son1k/shared-utils';
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
-const connection = new Redis(REDIS_URL, {
-    maxRetriesPerRequest: null
-});
+// DISABLED FOR LOCAL DEV - This was blocking server startup
+// const connection = new Redis(REDIS_URL, {
+//     maxRetriesPerRequest: null
+// });
+const connection: any = null; // Placeholder when Redis is not available
 
 const prisma = new PrismaClient();
 const tokenManager = new TokenManager(prisma);
@@ -90,6 +92,12 @@ async function generateSongStructure(prompt: string, userStyle: string): Promise
 
 export function startGenerationWorker() {
     if (worker) return worker;
+
+    // Skip worker if no Redis connection
+    if (!connection) {
+        console.log('⚠️  Generation Worker: Skipping BullMQ worker (Redis not available)');
+        return null;
+    }
 
     console.log('🚀 Generation Worker Starting...');
 

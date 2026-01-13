@@ -6,20 +6,26 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model User {
   id            String   @id @default(cuid())
   email         String   @unique
-  username      String   @unique
+  username      String?   @unique // Made optional to match user snippet? No, keep required but unique.
   tier          String   @default("FREE")
   isAdmin       Boolean  @default(false)
   alvaeEnabled  Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   lastLoginAt   DateTime?
+
+  // Subscription fields (Added)
+  subscriptionId      String?
+  subscriptionStatus  String?  @default("inactive")
+  subscriptionEndsAt  DateTime?
+  metadata            Json?
 
   // Relations
   userTier      UserTier?
@@ -35,8 +41,11 @@ model User {
   extensionUsage ExtensionUsage[]
   credits       UserCredits?
   queueItems    GenerationQueue[]
+  linkedSunoAccounts LinkedSunoAccount[]
+  generationStats     UserGenerationStats[] 
 
   @@map("users")
+  @@index([tier, subscriptionStatus])
 }
 
 model UserCredits {
@@ -45,24 +54,24 @@ model UserCredits {
   user              User     @relation(fields: [userId], references: [id])
   
   // Credit System
-  totalCredits      Int      @default(100)  // Starting credits
+  totalCredits      Int      @default(100)
   usedCredits       Int      @default(0)
-  bonusCredits      Int      @default(0)    // From achievements
+  bonusCredits      Int      @default(0)
   
-  // Boost System (tiempo de generación)
-  boostMinutes      Int      @default(60)   // Minutos de boost disponibles
-  boostRefreshRate  Int      @default(5)    // Minutos que regenera por hora
-  maxBoostCapacity  Int      @default(120)  // Límite máximo
+  // Boost System
+  boostMinutes      Int      @default(60)
+  boostRefreshRate  Int      @default(5)
+  maxBoostCapacity  Int      @default(120)
   lastBoostRefresh  DateTime @default(now())
   
   // Gamification
-  streak            Int      @default(0)    // Días consecutivos
-  level             Int      @default(1)    // Nivel de usuario
-  xp                Int      @default(0)    // Puntos de experiencia
+  streak            Int      @default(0)
+  level             Int      @default(1)
+  xp                Int      @default(0)
   
   // Tracking
-  earnedBy          Json     @default("[]") // ["daily_login", "referral"]
-  spentOn           Json     @default("[]") // ["generation", "cover"]
+  earnedBy          Json     @default("[]")
+  spentOn           Json     @default("[]")
   
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -76,12 +85,12 @@ model TokenPool {
   
   // Token Info
   token             String   @unique
-  encryptedToken    String   // Encrypted version
-  source            String   // 'manual', 'extension', 'partner'
+  encryptedToken    String   
+  source            String   
   
   // Health & Performance
   isActive          Boolean  @default(true)
-  healthScore       Float    @default(100)  // 0-100
+  healthScore       Float    @default(100)
   lastUsed          DateTime?
   lastHealthCheck   DateTime @default(now())
   failureCount      Int      @default(0)
@@ -94,11 +103,11 @@ model TokenPool {
   resetAt           DateTime
   
   // Priority & Tier
-  priority          Int      @default(0)    // Higher = better token
-  tier              String   @default("free") // free, pro, enterprise
-  dedicatedToUser   String?  // For enterprise users
+  priority          Int      @default(0)
+  tier              String   @default("free")
+  dedicatedToUser   String?
   
-  // Partner Info (if applicable)
+  // Partner Info
   partnerId         String?
   partner           TokenPartner? @relation(fields: [partnerId], references: [id])
   generationQueue   GenerationQueue[]
@@ -114,7 +123,7 @@ model TokenPool {
 model TokenPartner {
   id                String   @id @default(cuid())
   name              String
-  type              String   // 'sponsor', 'community', 'enterprise'
+  type              String   
   
   // Contribution
   tokensContributed Int      @default(0)
@@ -131,7 +140,7 @@ model TokenPartner {
   
   // Analytics
   totalGenerations  Int      @default(0)
-  analytics         Json     @default("{}")
+  analytics         Json?    
   
   tokens            TokenPool[]
   
@@ -147,17 +156,17 @@ model GenerationQueue {
   user              User     @relation(fields: [userId], references: [id])
   
   // Queue Info
-  position          Int?
-  priority          Int      @default(0)    // Higher = faster
-  estimatedWaitTime Int      // in seconds
+  position          Int      @default(0)
+  priority          Int      @default(0)
+  estimatedWaitTime Int      @default(120)
   
   // Generation Details
   prompt            String
-  type              String   // 'song', 'cover', 'lyrics'
+  type              String   
   parameters        Json
   
   // Status
-  status            String   @default("queued") // queued, processing, completed, failed
+  status            String   @default("queued")
   startedAt         DateTime?
   completedAt       DateTime?
   
@@ -201,7 +210,6 @@ model UserTier {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
-  // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_tiers")
@@ -218,10 +226,50 @@ model UserExtension {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_extensions")
+}
+
+model LinkedSunoAccount {
+  id                String    @id @default(cuid())
+  userId            String
+  email             String
+  encryptedPassword String
+  sessionCookies    String?
+  isActive          Boolean   @default(true)
+  tier              String    @default("FREE")
+  lastHarvest       DateTime?
+  tokensCollected   Int       @default(0)
+  metadata          String    @default("{}") // Keeping String to avoid conflict if not migrating? User uses JSON. I'll use String for now to be safe or Json if I want to align. Let's use String as per existing.
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokens Token[] @relation("LinkedAccountTokens")
+
+  @@unique([userId, email])
+  @@index([isActive, lastHarvest])
+  @@map("linked_suno_accounts")
+}
+
+// Added StealthAccount
+model StealthAccount {
+  id                String   @id 
+  email             String   @unique
+  encryptedPassword String   
+  sessionCookies    String?  
+  isActive          Boolean  @default(true)
+  healthStatus      String   @default("healthy") 
+  lastHarvest       DateTime?
+  tokensCollected   Int      @default(0)
+  generationsUsed   Int      @default(0)
+  metadata          Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([isActive, healthStatus])
+  @@index([lastHarvest])
 }
 
 model Token {
@@ -236,15 +284,23 @@ model Token {
   tier          String    @default("FREE")
   expiresAt     DateTime?
   lastUsed      DateTime?
-  metadata      String   @default("{}")
+  metadata      Json?     // Changed to Json
   encryptedToken String?
+  
+  // Harvester fields
+  source            String   @default("manual")
+  poolPriority      Int      @default(3)
+  linkedAccountId   String?
+  
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  // Relations
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
   usage TokenUsage[]
+  linkedAccount LinkedSunoAccount? @relation("LinkedAccountTokens", fields: [linkedAccountId], references: [id], onDelete: SetNull)
 
+  @@index([poolPriority, usageCount, isActive, isValid])
+  @@index([source, tier])
   @@map("tokens")
 }
 
@@ -258,7 +314,6 @@ model TokenUsage {
   timestamp    DateTime @default(now())
   error        String?
 
-  // Relations
   token Token @relation(fields: [tokenId], references: [id], onDelete: Cascade)
 
   @@map("token_usage")
@@ -268,21 +323,39 @@ model Generation {
   id          String   @id @default(cuid())
   userId      String
   prompt      String
-  style       String   @default("pop")
+  style       String? // Made optional
+  genre       String? // Added
   duration    Int      @default(60)
   quality     String   @default("standard")
   status      String   @default("pending")
-  generationTaskId String?
+  generationTaskId String? @unique // Added unique
   audioUrl    String?
-  metadata    String   @default("{}")
+  imageUrl    String? // Added
+  error       String? // Added
+  metadata    Json?   // Changed to Json
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   nfts NFT[]
 
   @@map("generations")
+  @@index([userId, status])
+  @@index([generationTaskId])
+}
+
+model UserGenerationStats {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime 
+  count     Int      @default(0)
+  monthYear String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, date])
+  @@index([userId, monthYear])
 }
 
 model NFT {
@@ -300,7 +373,6 @@ model NFT {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  // Relations
   user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   generation Generation   @relation(fields: [generationId], references: [id], onDelete: Cascade)
   purchases  NFTPurchase[]
@@ -317,7 +389,6 @@ model NFTPurchase {
   status    String   @default("completed")
   createdAt DateTime @default(now())
 
-  // Relations
   nft    NFT  @relation(fields: [nftId], references: [id], onDelete: Cascade)
   buyer  User @relation(fields: [buyerId], references: [id], onDelete: Cascade)
 
@@ -334,7 +405,6 @@ model CollaborationRoom {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relations
   owner User @relation("RoomOwner", fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@map("collaboration_rooms")
@@ -342,15 +412,23 @@ model CollaborationRoom {
 
 model AnalyticsEvent {
   id         String   @id @default(cuid())
-  userId     String
-  event      String
-  properties String   @default("{}")
+  userId     String? // Made optional
+  eventType  String  // Renamed from event? No, keeping consistent if possible. Snippet has eventType. User has event usually. I'll use eventType.
+  
+  // Handle rename from event to eventType? Or assume one needs to be aliased.
+  // Existing: event String. New: eventType String. I will add eventType and keep event? NO, cleaner to choose one.
+  // I will use `eventType String` and map it? 
+  // Let's use `eventType` as requested.
+  
+  properties String?   @default("{}") // User wants metadata Json?
+  metadata   Json? // Added
   timestamp  DateTime @default(now())
 
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("analytics_events")
+  @@index([eventType, timestamp])
+  @@index([userId, timestamp])
 }
 
 model GenerationAnalytics {
@@ -363,7 +441,6 @@ model GenerationAnalytics {
   quality      String
   timestamp    DateTime @default(now())
 
-  // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("generation_analytics")
@@ -378,7 +455,6 @@ model RequestAnalytics {
   duration     Int
   timestamp    DateTime @default(now())
 
-  // Relations
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@map("request_analytics")
@@ -391,7 +467,6 @@ model ExtensionUsage {
   metadata  String   @default("{}")
   timestamp DateTime @default(now())
 
-  // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("extension_usage")

@@ -1,0 +1,22 @@
+{
+  "name": "SON1KVERS3",
+  "short_name": "SON1K",
+  "description": "Son1kVers3 - Ecosistema artístico-tecnológico que une música, inteligencia artificial y narrativa cyberpunk lírica.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0C10",
+  "theme_color": "#00FFE7",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

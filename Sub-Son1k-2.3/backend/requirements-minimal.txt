@@ -1,0 +1,12 @@
+# Son1kVers3 Backend - Minimal Requirements (for local dev with SQLite)
+# This version EXCLUDES psycopg2-binary to save space
+# Use this for local development with SQLite
+
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+sqlalchemy==2.0.23
+stripe==7.4.0
+python-multipart==0.0.6
+pydantic==2.5.0
+python-dotenv==1.0.0
+# psycopg2-binary==2.9.9  # REMOVED - Only needed for PostgreSQL (production)

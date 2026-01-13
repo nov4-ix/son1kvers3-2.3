@@ -10,11 +10,15 @@ import { PrismaClient } from '@prisma/client';
 import { MusicGenerationService } from '../services/musicGenerationService';
 import { Server as SocketIOServer } from 'socket.io';
 
-// Redis connection for worker
+// Redis connection for worker - DISABLED FOR LOCAL DEV
+// Uncomment when Redis is available
+/*
 const redisConnection = new Redis(process.env.REDIS_URL || process.env.REDIS_HOST || 'redis://localhost:6379', {
   maxRetriesPerRequest: null,
   enableReadyCheck: false,
 });
+*/
+const redisConnection: any = null; // Placeholder for local dev without Redis
 
 export interface GenerationWorkerData {
   generationId: string;

@@ -49,14 +49,20 @@ export class MusicGenerationService {
     this.tokenPoolService = tokenPoolService;
     this.prisma = prisma;
 
-    const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
-    this.generationQueue = new Queue('music-generation', {
-      connection: {
-        url: REDIS_URL
-      }
-    });
-
-    console.log('🚀 MusicGenerationService: Queue initialized');
+    const REDIS_URL = process.env.REDIS_URL;
+    if (REDIS_URL) {
+      // Only initialize queue if Redis is available
+      this.generationQueue = new Queue('music-generation', {
+        connection: {
+          url: REDIS_URL
+        }
+      });
+      console.log('🚀 MusicGenerationService: Queue initialized with Redis');
+    } else {
+      // @ts-ignore - Queue is optional for local dev
+      this.generationQueue = null;
+      console.log('⚠️  MusicGenerationService: Running without Redis (queue disabled)');
+    }
   }
 
   /**
@@ -109,18 +115,21 @@ export class MusicGenerationService {
         }
       });
 
-      // 2. Add to BullMQ
-      await this.generationQueue.add('generate-music', {
-        userId: request.userId,
-        prompt: request.prompt,
-        style: request.style,
-        duration: request.duration,
-        quality: request.quality,
-        queueId: queueItem.id,
-        priority: priority
-      }, { priority: priority }); // BullMQ job priority
-
-      console.log(`[MusicGenerationService] Enqueued job: ${queueItem.id} (Priority: ${priority})`);
+      // 2. Add to BullMQ (only if Redis is available)
+      if (this.generationQueue) {
+        await this.generationQueue.add('generate-music', {
+          userId: request.userId,
+          prompt: request.prompt,
+          style: request.style,
+          duration: request.duration,
+          quality: request.quality,
+          queueId: queueItem.id,
+          priority: priority
+        }, { priority: priority }); // BullMQ job priority
+        console.log(`[MusicGenerationService] Enqueued job: ${queueItem.id} (Priority: ${priority})`);
+      } else {
+        console.log(`[MusicGenerationService] Queue disabled - job ${queueItem.id} recorded but not processed`);
+      }
 
       return {
         status: 'pending',

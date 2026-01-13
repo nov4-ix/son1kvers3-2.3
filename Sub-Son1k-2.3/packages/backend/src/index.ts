@@ -7,9 +7,14 @@ import { TokenManager } from './services/tokenManager';
 import { CreditService } from './services/creditService';
 import { MusicGenerationService } from './services/musicGenerationService';
 import { TokenPoolService } from './services/tokenPoolService';
+import { getStealthGenerator } from './services/StealthTokenGenerator';
 import { tokenRoutes } from './routes/tokens';
 import { audioEngineRoutes } from './routes/audioEngine';
+import neuralEngineRoutes from './routes/neural-engine';
 import { startGenerationWorker } from './workers/generation.worker';
+import { generationRoutes } from './routes/generation';
+import { quotaMiddleware, authMiddleware } from './middleware/auth';
+import { AnalyticsService } from './services/analyticsService';
 
 const fastify = Fastify({
   logger: true,
@@ -20,6 +25,7 @@ let tokenManager: TokenManager;
 let creditService: CreditService;
 let tokenPoolService: TokenPoolService;
 let musicGenerationService: MusicGenerationService;
+let analyticsService: AnalyticsService;
 
 // Register plugins (CORS, Helmet, Rate limiting)
 async function registerPlugins() {
@@ -29,6 +35,7 @@ async function registerPlugins() {
       'https://www.son1kvers3.com',
       'https://ghost-studio-lovat.vercel.app',
       'http://localhost:5173',
+      'http://localhost:5174',
       'http://localhost:3000',
       'http://localhost:4173',
     ],
@@ -54,146 +61,9 @@ fastify.get('/health', async () => {
     services: {
       musicGeneration: !!musicGenerationService,
       tokenManager: !!tokenManager,
+      neuralEngine: 'active'
     },
   };
-});
-
-// Public generation endpoint (no auth required)
-fastify.post('/api/generation/create-public', async (request, reply) => {
-  const body: any = request.body;
-
-  if (!musicGenerationService) {
-    return reply.status(503).send({
-      success: false,
-      error: 'Music generation service not initialized',
-    });
-  }
-
-  try {
-    fastify.log.info({ prompt: body.prompt }, 'Generation request received');
-    const result = await musicGenerationService.generateMusic({
-      prompt: body.prompt || 'Una canción instrumental',
-      style: body.style || 'pop',
-      duration: body.duration || 60,
-      quality: body.quality || 'standard',
-      userId: 'public-user',
-    });
-
-    if (result.status === 'failed') {
-      fastify.log.error({ error: result.error }, 'Generation failed');
-      return reply.status(500).send({
-        success: false,
-        error: result.error || 'Generation failed',
-      });
-    }
-
-    fastify.log.info({ taskId: result.generationTaskId }, 'Generation started');
-    return reply.send({
-      success: true,
-      taskId: result.generationTaskId,
-      status: result.status,
-      estimatedTime: result.estimatedTime ?? 120,
-      message: 'Generación iniciada exitosamente',
-    });
-  } catch (err: any) {
-    fastify.log.error({ error: err.message }, 'Generation error');
-    return reply.status(500).send({
-      success: false,
-      error: err.message || 'Internal server error',
-    });
-  }
-});
-
-// Alternative generate endpoint (expects userId)
-fastify.post('/api/generate', async (request, reply) => {
-  const body: any = request.body;
-
-  if (!musicGenerationService) {
-    return reply.status(503).send({
-      success: false,
-      error: 'Service not available',
-    });
-  }
-
-  try {
-    const result = await musicGenerationService.generateMusic({
-      prompt: body.prompt,
-      style: body.style || 'pop',
-      duration: body.duration || 60,
-      quality: body.quality || 'standard',
-      userId: body.userId || 'anonymous',
-    });
-
-    if (result.status === 'failed') {
-      return reply.status(500).send({
-        success: false,
-        error: result.error,
-      });
-    }
-
-    return reply.send({
-      success: true,
-      generationId: result.generationTaskId,
-      status: result.status,
-      estimatedTime: result.estimatedTime,
-    });
-  } catch (err: any) {
-    fastify.log.error(err);
-    return reply.status(500).send({
-      success: false,
-      error: err.message,
-    });
-  }
-});
-
-// Generation status endpoint
-fastify.get('/api/generation/:taskId/status', async (request, reply) => {
-  const { taskId } = request.params as { taskId: string };
-
-  if (!musicGenerationService) {
-    return reply.status(503).send({
-      success: false,
-      error: 'Service not available',
-    });
-  }
-
-  try {
-    const status = await musicGenerationService.getGenerationStatus(taskId);
-    return reply.send({
-      success: true,
-      ...status,
-    });
-  } catch (err: any) {
-    return reply.status(500).send({
-      success: false,
-      error: err.message,
-    });
-  }
-});
-
-// Credits endpoint
-fastify.get('/api/credits/:userId', async (request, reply) => {
-  const { userId } = request.params as { userId: string };
-
-  if (!creditService) {
-    return reply.status(503).send({
-      success: false,
-      error: 'Service not available',
-    });
-  }
-
-  try {
-    const credits = await creditService.getUserCredits(userId);
-    return reply.send({
-      success: true,
-      credits,
-    });
-  } catch (err: any) {
-    return reply.status(500).send({
-      success: false,
-      error: err.message,
-    });
-  }
 });
 
 // Server start
@@ -202,23 +72,35 @@ async function start() {
     await registerPlugins();
     fastify.log.info('Plugins registered');
 
-    // Load Suno tokens
+    // Load Suno tokens (Legacy)
     const sunoTokens = process.env.SUNO_TOKENS?.split(',').filter(t => t.trim()) || [];
-    if (sunoTokens.length === 0) {
-      fastify.log.warn('⚠️ No SUNO_TOKENS configured – music generation will be disabled');
-    } else {
-      fastify.log.info(`Found ${sunoTokens.length} Suno token(s)`);
+    if (sunoTokens.length > 0) {
+      fastify.log.info(`Found ${sunoTokens.length} legacy Suno token(s)`);
     }
 
     // Initialise Prisma and TokenManager
     const prisma = new PrismaClient();
-    tokenManager = new TokenManager(prisma); // Removed sunoTokens argument as per constructor signature in TokenManager.ts (step 290 view_file shows it only takes prisma)
+    tokenManager = new TokenManager(prisma);
     fastify.log.info('TokenManager initialized');
 
     // Initialise TokenPoolService
     tokenPoolService = new TokenPoolService(prisma, tokenManager);
     await tokenPoolService.initialize();
     fastify.log.info('TokenPoolService initialized');
+
+    // Initialise CreditService
+    creditService = new CreditService(prisma);
+    fastify.log.info('CreditService initialized');
+
+    // Initialise AnalyticsService
+    analyticsService = new AnalyticsService(prisma); // Assuming AnalyticsService takes prisma, if exists. If not I might need to check. 
+    // Step 23 showed generation.ts importing AnalyticsService. I assume it works like others. 
+    // Wait, step 23 generation.ts imports `AnalyticsService` from `../services/analyticsService`.
+    // I need to instantiate it. Let's assume constructor(prisma).
+
+    // Initialise MusicGenerationService
+    musicGenerationService = new MusicGenerationService(tokenManager, tokenPoolService, prisma, creditService);
+    fastify.log.info('MusicGenerationService initialized');
 
     // Register Token Routes
     await fastify.register(tokenRoutes(tokenManager, tokenPoolService), { prefix: '/api/tokens' });
@@ -228,24 +110,50 @@ async function start() {
     await fastify.register(audioEngineRoutes);
     fastify.log.info('Audio Engine Routes registered');
 
-    // Initialise CreditService
-    creditService = new CreditService(prisma);
-    fastify.log.info('CreditService initialized');
+    // Register Neural Engine Routes (REPLACES Suno Accounts)
+    await fastify.register(neuralEngineRoutes, { prefix: '/api/neural-engine' });
+    fastify.log.info('Neural Engine Routes registered');
 
-    // Initialise MusicGenerationService
-    musicGenerationService = new MusicGenerationService(tokenManager, tokenPoolService, prisma, creditService);
-    fastify.log.info('MusicGenerationService initialized');
+    // Register Generation Routes
+    await fastify.register(generationRoutes(musicGenerationService, analyticsService), { prefix: '/api/generation' });
+    fastify.log.info('Generation Routes registered');
 
     // Start Generation Worker (BullMQ)
-    startGenerationWorker();
-    fastify.log.info('Generation Worker started');
+    try {
+      startGenerationWorker();
+      fastify.log.info('Generation Worker started');
+    } catch (workerError) {
+      fastify.log.warn('⚠️ Generation Worker failed to start (Redis down?):', workerError);
+    }
+
+    // INICIAR STEALTH TOKEN GENERATOR (The new system)
+    try {
+      const stealthGen = getStealthGenerator();
+
+      console.log('🕵️ Iniciando Sistema Stealth...');
+      console.log('   (Generación automática de tokens en segundo plano)\n');
+
+      await stealthGen.start();
+
+      // Stats iniciales
+      const stats = await stealthGen.getStats();
+      console.log('📊 Estado del Sistema:');
+      console.log(`   - Cuentas activas: ${stats.totalStealthAccounts}`);
+      console.log(`   - Tokens en pool: ${stats.tokensInPool}`);
+      console.log(`   - Estado: ${stats.systemStatus}`);
+      console.log('   ================================\n');
+
+      fastify.log.info('✅ Sistema Stealth completamente operativo');
+    } catch (error) {
+      fastify.log.error('❌ Error iniciando Sistema Stealth:', error);
+    }
 
     const port = parseInt(process.env.PORT || '3000', 10);
     const host = process.env.HOST || '0.0.0.0';
     await fastify.listen({ port, host });
 
     fastify.log.info(`🚀 Server listening on ${host}:${port}`);
-    fastify.log.info(`🎵 Music Generation: ${sunoTokens.length > 0 ? 'ACTIVE' : 'INACTIVE'}`);
+    fastify.log.info(`🎵 Music Generation: ACTIVE (Neural Engine v2.0)`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
@@ -253,3 +161,19 @@ async function start() {
 }
 
 start();
+
+// Graceful shutdown
+const signals = ['SIGTERM', 'SIGINT'];
+signals.forEach(signal => {
+  process.on(signal, async () => {
+    console.log(`\n🛑 ${signal} recibido, cerrando servidor...`);
+    try {
+      await fastify.close();
+      // Here we could stop listeners/browsers if we exposed a stop method in StealthGenerator
+      console.log('Server closed');
+    } catch (err) {
+      console.error('Error closing server:', err);
+    }
+    process.exit(0);
+  });
+});

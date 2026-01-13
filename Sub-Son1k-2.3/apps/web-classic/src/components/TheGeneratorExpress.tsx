@@ -11,6 +11,8 @@ export const TheGeneratorExpress = () => {
     const [isBoostEnabled, setIsBoostEnabled] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [generationMessage, setGenerationMessage] = useState('');
+    const [generationProgress, setGenerationProgress] = useState(0); // Progress 0-100%
+    const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState(0); // Seconds
     const [trackUrl, setTrackUrl] = useState<string | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [duration, setDuration] = useState(0);
@@ -122,50 +124,75 @@ export const TheGeneratorExpress = () => {
 
         let attempts = 0;
         const maxAttempts = 60; // 5 minutes (every 5s)
+        const estimatedTotalTime = 120; // 120 seconds estimated
 
         const checkStatus = async () => {
             if (attempts >= maxAttempts) {
                 toast.error('Tiempo de espera agotado');
                 setIsGenerating(false);
+                setGenerationProgress(0);
                 return;
             }
 
             attempts++;
 
+            // Update progress bar (0-90% during polling, 100% when done)
+            const progressPercentage = Math.min(90, (attempts / maxAttempts) * 100);
+            setGenerationProgress(progressPercentage);
+
+            // Update estimated time
+            const elapsedTime = attempts * 5; // 5 seconds per attempt
+            const remainingTime = Math.max(0, estimatedTotalTime - elapsedTime);
+            setEstimatedTimeRemaining(remainingTime);
+
             try {
-                // Use the new Robust API getter
                 const response = await fetch(`${BACKEND_URL}/api/generation/${clipId}/status`);
 
                 if (response.ok) {
                     const data = await response.json();
 
                     if (data.success) {
-                        // Check for completion or error
-                        // Map backend status 'completed' to frontend expectations if needed, 
-                        // or just use backend status directly.
+                        // Update message based on status
+                        if (data.status === 'processing') {
+                            setGenerationMessage('🎵 Generando música...');
+                        } else if (data.status === 'pending') {
+                            setGenerationMessage('⏳ En cola de generación...');
+                        }
+
+                        // Check for completion
                         if (data.status === 'completed' || data.status === 'complete') {
                             if (data.audioUrl || data.audio_url) {
                                 setTrackUrl(data.audioUrl || data.audio_url);
                                 setIsGenerating(false);
+                                setGenerationProgress(100);
                                 setGenerationMessage('¡Canción generada!');
                                 toast.success('¡Tu canción está lista!');
-                                return;
+                                return; // STOP polling
+                            } else {
+                                // Completed but no audio URL yet - keep polling
+                                setGenerationMessage('Finalizando descarga...');
                             }
                         } else if (data.status === 'failed' || data.status === 'error') {
+                            setIsGenerating(false);
+                            setGenerationProgress(0);
                             throw new Error(data.error || 'La generación falló');
                         }
                     }
                 }
 
-                // Continue polling
+                // Continue polling only if not completed
                 setTimeout(checkStatus, 5000);
             } catch (error: any) {
                 console.error('Polling error:', error);
-                // Don't stop polling on transient errors unless critical
-                setTimeout(checkStatus, 5000);
+                setIsGenerating(false);
+                setGenerationProgress(0);
+                toast.error(error.message || 'Error durante la generación');
             }
         };
 
+        // Initialize progress
+        setGenerationProgress(5);
+        setEstimatedTimeRemaining(estimatedTotalTime);
         setTimeout(checkStatus, 3000);
     };
 
@@ -386,6 +413,37 @@ export const TheGeneratorExpress = () => {
                                 </>
                             )}
                         </button>
+
+                        {/* Progress Bar - Show when generating */}
+                        {isGenerating && (
+                            <div className="mt-6 space-y-3">
+                                {/* Progress bar */}
+                                <div className="relative w-full h-3 bg-white/10 rounded-full overflow-hidden">
+                                    <div
+                                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#40FDAE] to-[#15A4A2] rounded-full transition-all duration-500 ease-out"
+                                        style={{ width: `${generationProgress}%` }}
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
+                                    </div>
+                                </div>
+
+                                {/* Status info */}
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-white/70">
+                                        {generationMessage || 'Procesando...'}
+                                    </span>
+                                    <span className="text-[#40FDAE] font-semibold">
+                                        {generationProgress.toFixed(0)}%
+                                        {estimatedTimeRemaining > 0 && (
+                                            <span className="text-white/50 ml-2">
+                                                (~{estimatedTimeRemaining}s)
+                                            </span>
+                                        )}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
                         <p className="text-center text-xs text-white/40 mt-4">La generación puede tardar entre 30-60 segundos</p>
                     </div>
                 </div>

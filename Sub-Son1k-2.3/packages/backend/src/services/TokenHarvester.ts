@@ -1,8 +1,10 @@
 // packages/backend/src/services/TokenHarvester.ts
-import puppeteer, { Browser, Page } from 'puppeteer-extra';
+import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import type { Browser, Page } from 'puppeteer';
 import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
+import { TokenManager } from './tokenManager';
 
 puppeteer.use(StealthPlugin());
 
@@ -28,13 +30,15 @@ interface HarvestResult {
 
 export class TokenHarvester {
     private prisma: PrismaClient;
+    private tokenManager: TokenManager;
     private activeBrowsers: Map<string, Browser> = new Map();
     private harvestInterval: number;
     private isRunning: boolean = false;
     private intervalId?: NodeJS.Timeout;
 
-    constructor(harvestIntervalMinutes: number = 5) {
+    constructor(tokenManager: TokenManager, harvestIntervalMinutes: number = 5) {
         this.prisma = new PrismaClient();
+        this.tokenManager = tokenManager;
         this.harvestInterval = harvestIntervalMinutes * 60 * 1000;
     }
 
@@ -180,14 +184,14 @@ export class TokenHarvester {
 
             console.log(`🎯 [${account.email}] Capturando tokens...`);
             await page.evaluate(() => {
-                Promise.all([
+                return Promise.all([
                     fetch('/api/user/credits'),
                     fetch('/api/user/profile'),
                     fetch('/api/feed')
                 ]);
             });
 
-            await page.waitForTimeout(3000);
+            await new Promise(resolve => setTimeout(resolve, 3000));
 
             const tokensArray = Array.from(capturedTokens);
             if (tokensArray.length > 0) {
@@ -224,7 +228,7 @@ export class TokenHarvester {
 
     private async createSession(account: LinkedSunoAccount): Promise<Browser> {
         const browser = await puppeteer.launch({
-            headless: 'new',
+            headless: true,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -276,12 +280,21 @@ export class TokenHarvester {
         await page.waitForSelector('input[type="email"]', { timeout: 10000 });
 
         await page.type('input[type="email"]', account.email, { delay: 100 });
-        await page.waitForTimeout(500);
+        await new Promise(resolve => setTimeout(resolve, 500));
         await page.type('input[type="password"]', decryptedPassword, { delay: 100 });
-        await page.waitForTimeout(500);
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         await page.click('button[type="submit"]');
-        await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 });
+        // Wait for navigation - wait for URL to change or timeout
+        const startUrl = page.url();
+        await Promise.race([
+          page.waitForFunction(
+            (url) => page.url() !== url,
+            { timeout: 30000 },
+            startUrl
+          ),
+          new Promise(resolve => setTimeout(resolve, 5000)) // Max 5s wait
+        ]);
 
         const cookies = await page.cookies();
         await this.prisma.linkedSunoAccount.update({
@@ -297,50 +310,47 @@ export class TokenHarvester {
             where: { id: account.userId }
         });
 
+        const tier = (user?.tier || 'FREE') as 'FREE' | 'PREMIUM' | 'ENTERPRISE';
+        let savedCount = 0;
+
         for (const token of tokens) {
             try {
-                await this.prisma.token.create({
-                    data: {
-                        hash: `auto_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                        encryptedToken: Buffer.from(token).toString('base64'),
-                        email: account.email,
+                // Use TokenManager to properly add token with encryption
+                await this.tokenManager.addToken(
+                    token,
+                    account.userId,
+                    account.email,
+                    tier,
+                    {
                         source: 'auto_harvest',
-                        tier: user?.tier || 'FREE',
-                        poolPriority: this.getPoolPriority(user?.tier),
-                        linkedAccountId: account.id,
-                        isActive: true,
-                        isValid: true,
-                        metadata: JSON.stringify({
-                            harvestedAt: new Date().toISOString(),
-                            accountTier: user?.tier,
-                            accountEmail: account.email
-                        })
+                        harvestedAt: new Date().toISOString(),
+                        accountTier: user?.tier,
+                        accountEmail: account.email,
+                        linkedAccountId: account.id
                     }
-                });
+                );
+                savedCount++;
             } catch (error: any) {
-                if (error.code === 'P2002') continue;
-                throw error;
+                // Skip if token already exists
+                if (error.message?.includes('already exists') || error.code === 'P2002') {
+                    continue;
+                }
+                console.error(`Error guardando token para ${account.email}:`, error.message);
             }
         }
 
-        await this.prisma.linkedSunoAccount.update({
-            where: { id: account.id },
-            data: {
-                lastHarvest: new Date(),
-                tokensCollected: { increment: tokens.length }
-            }
-        });
-    }
-
-    private getPoolPriority(tier?: string): number {
-        switch (tier) {
-            case 'STUDIO': return 1;
-            case 'PRO': return 2;
-            case 'CREATOR': return 2;
-            case 'FREE': return 3;
-            default: return 4;
+        if (savedCount > 0) {
+            await this.prisma.linkedSunoAccount.update({
+                where: { id: account.id },
+                data: {
+                    lastHarvest: new Date(),
+                    tokensCollected: { increment: savedCount }
+                }
+            });
+            console.log(`✅ [${account.email}] ${savedCount} token(s) guardado(s) en el pool`);
         }
     }
+
 
     private decrypt(encrypted: string): string {
         try {
@@ -381,14 +391,29 @@ export class TokenHarvester {
             where: { isActive: true }
         });
 
-        const totalTokens = await this.prisma.token.count({
-            where: { source: 'auto_harvest', isActive: true }
+        // Contar tokens recolectados automáticamente (buscando en metadata)
+        const allTokens = await this.prisma.token.findMany({
+            where: { isActive: true }
         });
 
-        const tokensByTier = await this.prisma.token.groupBy({
-            by: ['tier'],
-            where: { source: 'auto_harvest', isActive: true },
-            _count: true
+        const autoHarvestTokens = allTokens.filter(t => {
+            try {
+                const metadata = typeof t.metadata === 'string' 
+                    ? JSON.parse(t.metadata) 
+                    : t.metadata || {};
+                return metadata.source === 'auto_harvest';
+            } catch {
+                return false;
+            }
+        });
+
+        const totalTokens = autoHarvestTokens.length;
+
+        // Agrupar por tier manualmente
+        const tokensByTier: Record<string, number> = {};
+        autoHarvestTokens.forEach(token => {
+            const tier = token.tier || 'FREE';
+            tokensByTier[tier] = (tokensByTier[tier] || 0) + 1;
         });
 
         return {
@@ -397,10 +422,7 @@ export class TokenHarvester {
             activeAccounts: accounts.length,
             activeBrowsers: this.activeBrowsers.size,
             totalTokensHarvested: totalTokens,
-            tokensByTier: tokensByTier.reduce((acc, item) => {
-                acc[item.tier] = item._count;
-                return acc;
-            }, {} as Record<string, number>),
+            tokensByTier,
             accounts: accounts.map(acc => ({
                 id: acc.id,
                 email: acc.email,
@@ -414,9 +436,9 @@ export class TokenHarvester {
 
 let harvesterInstance: TokenHarvester | null = null;
 
-export function getHarvester(intervalMinutes: number = 5): TokenHarvester {
+export function getHarvester(tokenManager: TokenManager, intervalMinutes: number = 5): TokenHarvester {
     if (!harvesterInstance) {
-        harvesterInstance = new TokenHarvester(intervalMinutes);
+        harvesterInstance = new TokenHarvester(tokenManager, intervalMinutes);
     }
     return harvesterInstance;
 }

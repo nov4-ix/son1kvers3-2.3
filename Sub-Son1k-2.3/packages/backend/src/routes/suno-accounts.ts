@@ -1,17 +1,23 @@
 // packages/backend/src/routes/suno-accounts.ts
-import { Router } from 'express';
+import { FastifyPluginAsync } from 'fastify';
 import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { TokenManager } from '../services/tokenManager';
 import { getHarvester } from '../services/TokenHarvester';
 
 puppeteer.use(StealthPlugin());
 
-const router = Router();
-const prisma = new PrismaClient();
+interface SunoAccountsPluginOptions {
+  prisma: PrismaClient;
+  tokenManager: TokenManager;
+}
 
-function encrypt(text: string): string {
+const sunoAccountsRoutes: FastifyPluginAsync<SunoAccountsPluginOptions> = async (fastify, options) => {
+  const { prisma, tokenManager } = options;
+
+  function encrypt(text: string): string {
     const key = Buffer.from(process.env.ENCRYPTION_KEY || '', 'hex');
     if (key.length !== 32) {
         throw new Error('ENCRYPTION_KEY debe ser 32 bytes (64 caracteres hex)');
@@ -28,7 +34,7 @@ function encrypt(text: string): string {
     return `${iv.toString('hex')}:${encrypted}:${authTag.toString('hex')}`;
 }
 
-async function verifyCredentials(email: string, password: string): Promise<boolean> {
+  async function verifyCredentials(email: string, password: string): Promise<boolean> {
     let browser;
 
     try {
@@ -59,12 +65,12 @@ async function verifyCredentials(email: string, password: string): Promise<boole
     }
 }
 
-router.post('/link', async (req, res) => {
+  fastify.post('/link', async (request, reply) => {
     try {
-        const { userId, sunoEmail, sunoPassword } = req.body;
+        const { userId, sunoEmail, sunoPassword } = request.body as any;
 
         if (!userId || !sunoEmail || !sunoPassword) {
-            return res.status(400).json({
+            return reply.status(400).send({
                 error: 'Faltan campos requeridos: userId, sunoEmail, sunoPassword'
             });
         }
@@ -72,7 +78,7 @@ router.post('/link', async (req, res) => {
         const user = await prisma.user.findUnique({ where: { id: userId } });
 
         if (!user) {
-            return res.status(404).json({ error: 'Usuario no encontrado' });
+            return reply.status(404).send({ error: 'Usuario no encontrado' });
         }
 
         const linkedCount = await prisma.linkedSunoAccount.count({
@@ -87,7 +93,7 @@ router.post('/link', async (req, res) => {
         }[user.tier] || 1;
 
         if (linkedCount >= maxAccounts) {
-            return res.status(400).json({
+            return reply.status(400).send({
                 error: `Límite alcanzado. Tu tier ${user.tier} permite máx ${maxAccounts} cuenta(s)`
             });
         }
@@ -97,7 +103,7 @@ router.post('/link', async (req, res) => {
         });
 
         if (existing) {
-            return res.status(400).json({
+            return reply.status(400).send({
                 error: 'Esta cuenta ya está vinculada a un usuario'
             });
         }
@@ -106,7 +112,7 @@ router.post('/link', async (req, res) => {
         const isValid = await verifyCredentials(sunoEmail, sunoPassword);
 
         if (!isValid) {
-            return res.status(401).json({
+            return reply.status(401).send({
                 error: 'Credenciales inválidas de Suno'
             });
         }
@@ -125,7 +131,7 @@ router.post('/link', async (req, res) => {
 
         console.log(`✅ Cuenta ${sunoEmail} vinculada a usuario ${userId}`);
 
-        res.json({
+        return reply.send({
             success: true,
             message: 'Cuenta vinculada exitosamente. Comenzaremos a recolectar tokens automáticamente.',
             account: {
@@ -137,13 +143,13 @@ router.post('/link', async (req, res) => {
 
     } catch (error: any) {
         console.error('❌ Error vinculando cuenta:', error);
-        res.status(500).json({ error: error.message });
+        return reply.status(500).send({ error: error.message });
     }
-});
+  });
 
-router.get('/linked/:userId', async (req, res) => {
+  fastify.get('/linked/:userId', async (request, reply) => {
     try {
-        const { userId } = req.params;
+        const { userId } = request.params as any;
 
         const accounts = await prisma.linkedSunoAccount.findMany({
             where: { userId },
@@ -159,20 +165,20 @@ router.get('/linked/:userId', async (req, res) => {
             orderBy: { createdAt: 'desc' }
         });
 
-        res.json({
+        return reply.send({
             success: true,
             accounts
         });
 
     } catch (error: any) {
         console.error('❌ Error obteniendo cuentas:', error);
-        res.status(500).json({ error: error.message });
+        return reply.status(500).send({ error: error.message });
     }
-});
+  });
 
-router.delete('/link/:accountId', async (req, res) => {
+  fastify.delete('/link/:accountId', async (request, reply) => {
     try {
-        const { accountId } = req.params;
+        const { accountId } = request.params as any;
 
         await prisma.linkedSunoAccount.update({
             where: { id: accountId },
@@ -181,65 +187,67 @@ router.delete('/link/:accountId', async (req, res) => {
 
         console.log(`🗑️  Cuenta ${accountId} desvinculada`);
 
-        res.json({
+        return reply.send({
             success: true,
             message: 'Cuenta desvinculada exitosamente'
         });
 
     } catch (error: any) {
         console.error('❌ Error desvinculando cuenta:', error);
-        res.status(500).json({ error: error.message });
+        return reply.status(500).send({ error: error.message });
     }
-});
+  });
 
-router.get('/harvester/stats', async (req, res) => {
+  fastify.get('/harvester/stats', async (request, reply) => {
     try {
-        const harvester = getHarvester();
+        const harvester = getHarvester(tokenManager);
         const stats = await harvester.getStats();
 
-        res.json({
+        return reply.send({
             success: true,
             stats
         });
 
     } catch (error: any) {
         console.error('❌ Error obteniendo stats:', error);
-        res.status(500).json({ error: error.message });
+        return reply.status(500).send({ error: error.message });
     }
-});
+  });
 
-router.post('/harvester/start', async (req, res) => {
+  fastify.post('/harvester/start', async (request, reply) => {
     try {
-        const { intervalMinutes = 5 } = req.body;
+        const { intervalMinutes = 5 } = request.body as any;
 
-        const harvester = getHarvester(intervalMinutes);
+        const harvester = getHarvester(tokenManager, intervalMinutes);
         await harvester.start();
 
-        res.json({
+        return reply.send({
             success: true,
             message: `Harvester iniciado (intervalo: ${intervalMinutes} min)`
         });
 
     } catch (error: any) {
         console.error('❌ Error iniciando harvester:', error);
-        res.status(500).json({ error: error.message });
+        return reply.status(500).send({ error: error.message });
     }
-});
+  });
 
-router.post('/harvester/stop', async (req, res) => {
+  fastify.post('/harvester/stop', async (request, reply) => {
     try {
-        const harvester = getHarvester();
+        const harvester = getHarvester(tokenManager);
         await harvester.stop();
 
-        res.json({
+        return reply.send({
             success: true,
             message: 'Harvester detenido'
         });
 
     } catch (error: any) {
         console.error('❌ Error deteniendo harvester:', error);
-        res.status(500).json({ error: error.message });
+        return reply.status(500).send({ error: error.message });
     }
-});
+  });
 
-export default router;
+};
+
+export default sunoAccountsRoutes;

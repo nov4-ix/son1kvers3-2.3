@@ -128,7 +128,23 @@ export class MusicGenerationService {
         }, { priority: priority }); // BullMQ job priority
         console.log(`[MusicGenerationService] Enqueued job: ${queueItem.id} (Priority: ${priority})`);
       } else {
-        console.log(`[MusicGenerationService] Queue disabled - job ${queueItem.id} recorded but not processed`);
+        // ✅ MODO SIN REDIS: Procesar directamente (síncrono pero funcional)
+        console.log(`[MusicGenerationService] Queue disabled - processing directly for queueId: ${queueItem.id}`);
+        
+        // Procesar en background sin bloquear la respuesta
+        setImmediate(async () => {
+          try {
+            await this.processGenerationDirectly(queueItem.id, {
+              userId: request.userId,
+              prompt: request.prompt,
+              style: request.style,
+              duration: request.duration,
+              quality: request.quality
+            });
+          } catch (error) {
+            console.error(`[MusicGenerationService] Direct processing failed for ${queueItem.id}:`, error);
+          }
+        });
       }
 
       return {
@@ -471,6 +487,106 @@ export class MusicGenerationService {
         'X-Client-Version': '2.0.0'
       }
     });
+  }
+
+  /**
+   * Process generation directly when Redis is not available
+   * This is a fallback mechanism for local development
+   */
+  private async processGenerationDirectly(
+    queueId: string,
+    request: { userId: string; prompt: string; style: string; duration: number; quality: string }
+  ): Promise<void> {
+    try {
+      // Get User Tier
+      const user = await this.prisma.user.findUnique({ where: { id: request.userId } });
+      const userTier = (user?.tier || 'free').toLowerCase() as 'free' | 'pro' | 'enterprise';
+
+      // Get Token
+      let tokenStr: string;
+      let tokenId: string;
+
+      if (this.tokenPoolService) {
+        const selection = await this.tokenPoolService.selectOptimalToken(userTier, request.userId);
+        tokenStr = selection.token;
+        tokenId = selection.tokenId;
+      } else {
+        const tokenData = await this.tokenManager.getHealthyToken(request.userId);
+        if (!tokenData) throw new Error('No available tokens');
+        tokenStr = tokenData.token;
+        tokenId = tokenData.tokenId;
+      }
+
+      // Update status to processing
+      await this.prisma.generationQueue.update({
+        where: { id: queueId },
+        data: {
+          status: 'processing',
+          startedAt: new Date()
+        }
+      });
+
+      // Call generation API (simplified version)
+      const baseURL = env.GENERATION_API_URL || env.NEURAL_ENGINE_API_URL || 'https://ai.imgkits.com/suno';
+      const response = await axios.post(`${baseURL}/generate`, {
+        prompt: request.prompt,
+        lyrics: '',
+        title: '',
+        style: request.style,
+        customMode: false,
+        instrumental: false
+      }, {
+        headers: {
+          'authorization': `Bearer ${tokenStr}`,
+          'Content-Type': 'application/json',
+          'channel': 'node-api',
+          'origin': 'https://www.livepolls.app',
+          'referer': 'https://www.livepolls.app/'
+        },
+        timeout: 60000
+      });
+
+      if (response.status === 200 && response.data) {
+        const taskId = response.data.taskId || response.data.id || response.data.task_id;
+        
+        await this.prisma.generationQueue.update({
+          where: { id: queueId },
+          data: {
+            status: 'processing',
+            result: { taskId, ...response.data }
+          }
+        });
+
+        // Update generation record if exists
+        const generation = await this.prisma.generation.findFirst({
+          where: { generationTaskId: queueId }
+        });
+
+        if (generation) {
+          await this.prisma.generation.update({
+            where: { id: generation.id },
+            data: {
+              status: 'PROCESSING',
+              generationTaskId: taskId
+            }
+          });
+        }
+
+        console.log(`[MusicGenerationService] Direct processing started: ${taskId}`);
+      } else {
+        throw new Error(`API returned status ${response.status}`);
+      }
+    } catch (error: any) {
+      console.error(`[MusicGenerationService] Direct processing error:`, error);
+      
+      await this.prisma.generationQueue.update({
+        where: { id: queueId },
+        data: {
+          status: 'failed',
+          error: error.message || 'Unknown error'
+        }
+      });
+    }
   }
 
   /**

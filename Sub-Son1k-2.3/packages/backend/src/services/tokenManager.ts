@@ -164,6 +164,9 @@ export class TokenManager extends EventEmitter {
       const validation = await this.validateTokenWithGenerationAPI(token);
       const isValid = validation.isValid;
 
+      // Encrypt token before storing
+      const encryptedTokenString = this.encryptToken(token);
+
       // Create token record
       const tokenRecord = await this.prisma.token.create({
         data: {
@@ -175,6 +178,7 @@ export class TokenManager extends EventEmitter {
           usageCount: 0,
           rateLimit: this.getRateLimitForTier(tier),
           tier,
+          encryptedToken: encryptedTokenString, // Store encrypted token
           metadata: typeof metadata === 'string' ? metadata : JSON.stringify(metadata || {}), // Convert to JSON string if needed
           expiresAt: tier === 'FREE' ? new Date(Date.now() + 24 * 60 * 60 * 1000) : undefined // 24h for free
         }
@@ -573,8 +577,9 @@ export class TokenManager extends EventEmitter {
 
   /**
    * Encrypt token for storage using AES-256-GCM
+   * Public method to allow external services to encrypt tokens
    */
-  private encryptToken(token: string): string {
+  public encryptToken(token: string): string {
     try {
       // Generate random IV for each encryption
       const iv = crypto.randomBytes(this.ivLength);

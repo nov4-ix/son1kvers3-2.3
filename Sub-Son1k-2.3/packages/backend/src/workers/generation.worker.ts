@@ -14,9 +14,23 @@ const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 // });
 const connection: any = null; // Placeholder when Redis is not available
 
+// ⚠️ IMPORTANTE: Estas instancias se deben obtener del index.ts (globales)
+// Por ahora las creamos aquí, pero idealmente deberían ser inyectadas
 const prisma = new PrismaClient();
-const tokenManager = new TokenManager(prisma);
-const tokenPoolService = new TokenPoolService(prisma, tokenManager);
+let tokenManager: TokenManager;
+let tokenPoolService: TokenPoolService;
+
+// Función para inicializar con instancias globales (llamada desde index.ts)
+export function setGlobalInstances(tm: TokenManager, tps: TokenPoolService) {
+  tokenManager = tm;
+  tokenPoolService = tps;
+}
+
+// Fallback: crear instancias si no se han inyectado
+if (!tokenManager) {
+  tokenManager = new TokenManager(prisma);
+  tokenPoolService = new TokenPoolService(prisma, tokenManager);
+}
 
 // Configuration
 const BASE_URL = process.env.GENERATION_API_URL || 'https://ai.imgkits.com/suno';
@@ -198,18 +212,45 @@ export function startGenerationWorker() {
                 const result = response.data;
                 const taskId = result.taskId || result.id || result.task_id;
 
+                if (!taskId) {
+                    throw new Error('No task ID received from generation API');
+                }
+
                 console.log(`[Job ${job.id}] Generation started successfully: ${taskId}`);
 
-                // Update Job with Result
+                // ✅ IMPORTANTE: Actualizar con taskId pero mantener status 'processing'
+                // El audio aún no está listo, solo iniciamos la generación
                 await prisma.generationQueue.update({
                     where: { id: queueId },
                     data: {
-                        status: 'completed',
-                        completedAt: new Date(),
-                        result: result,
-                        creditsUsed: 10
+                        status: 'processing', // Mantener como processing, no completed
+                        result: {
+                            taskId: taskId,
+                            ...result
+                        },
+                        creditsUsed: 5 // Costo inicial
                     }
                 });
+
+                // Actualizar también la generación en la tabla Generation si existe
+                const generation = await prisma.generation.findFirst({
+                    where: { generationTaskId: queueId }
+                });
+
+                if (generation) {
+                    await prisma.generation.update({
+                        where: { id: generation.id },
+                        data: {
+                            status: 'PROCESSING',
+                            generationTaskId: taskId,
+                            metadata: JSON.stringify({
+                                ...JSON.parse(generation.metadata?.toString() || '{}'),
+                                taskId: taskId,
+                                startedAt: new Date().toISOString()
+                            })
+                        }
+                    });
+                }
 
                 return { success: true, taskId, ...result };
             } else {
@@ -219,13 +260,34 @@ export function startGenerationWorker() {
         } catch (error: any) {
             console.error(`[Job ${job.id}] Failed:`, error.message);
 
+            // Mejorar mensaje de error para tokens
+            let errorMessage = error.message;
+            if (error.message?.includes('No healthy tokens') || error.message?.includes('No available tokens')) {
+                errorMessage = 'No hay tokens disponibles. Por favor, agrega tokens al pool o vincula una cuenta de Suno.';
+            }
+
             await prisma.generationQueue.update({
                 where: { id: queueId },
                 data: {
                     status: 'failed',
-                    error: error.message
+                    error: errorMessage
                 }
             });
+
+            // Actualizar también la generación en la tabla Generation si existe
+            const generation = await prisma.generation.findFirst({
+                where: { generationTaskId: queueId }
+            });
+
+            if (generation) {
+                await prisma.generation.update({
+                    where: { id: generation.id },
+                    data: {
+                        status: 'FAILED',
+                        error: errorMessage
+                    }
+                });
+            }
 
             throw error;
         }

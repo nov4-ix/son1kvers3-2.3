@@ -11,10 +11,12 @@ import { getStealthGenerator } from './services/StealthTokenGenerator';
 import { tokenRoutes } from './routes/tokens';
 import { audioEngineRoutes } from './routes/audioEngine';
 import neuralEngineRoutes from './routes/neural-engine';
+import sunoAccountsRoutes from './routes/suno-accounts';
 import { startGenerationWorker } from './workers/generation.worker';
 import { generationRoutes } from './routes/generation';
 import { quotaMiddleware, authMiddleware } from './middleware/auth';
 import { AnalyticsService } from './services/analyticsService';
+import { getHarvester } from './services/TokenHarvester';
 
 const fastify = Fastify({
   logger: true,
@@ -114,16 +116,36 @@ async function start() {
     await fastify.register(neuralEngineRoutes, { prefix: '/api/neural-engine' });
     fastify.log.info('Neural Engine Routes registered');
 
+    // Register Suno Accounts Routes (Token Harvester)
+    await fastify.register(sunoAccountsRoutes, { 
+      prefix: '/api/suno-accounts',
+      prisma,
+      tokenManager
+    });
+    fastify.log.info('Suno Accounts Routes registered');
+
     // Register Generation Routes
     await fastify.register(generationRoutes(musicGenerationService, analyticsService), { prefix: '/api/generation' });
     fastify.log.info('Generation Routes registered');
 
     // Start Generation Worker (BullMQ)
     try {
+      // Pasar instancias globales al worker
+      const { setGlobalInstances } = await import('./workers/generation.worker');
+      setGlobalInstances(tokenManager, tokenPoolService);
       startGenerationWorker();
       fastify.log.info('Generation Worker started');
     } catch (workerError) {
       fastify.log.warn('⚠️ Generation Worker failed to start (Redis down?):', workerError);
+    }
+
+    // INICIAR TOKEN HARVESTER (Recolección automática de tokens)
+    try {
+      const harvester = getHarvester(tokenManager, 5); // Intervalo de 5 minutos
+      await harvester.start();
+      fastify.log.info('✅ TokenHarvester iniciado (recolección automática cada 5 min)');
+    } catch (error) {
+      fastify.log.warn('⚠️ TokenHarvester no pudo iniciarse:', error);
     }
 
     // INICIAR STEALTH TOKEN GENERATOR (The new system)

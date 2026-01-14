@@ -95,9 +95,26 @@ export class TokenPoolService {
     const validTokens = tokens.filter(t => t.currentDailyUsage < t.dailyLimit);
 
     if (validTokens.length === 0) {
-      // Fallback to TokenManager's emergency get if pool is empty
-      // But for now, throw error or return generic
-      throw new Error('No healthy tokens available in the pool. Please try again later.');
+      // ✅ FALLBACK CRÍTICO: Si TokenPool está vacío, usar TokenManager
+      console.warn('⚠️ TokenPool vacío, usando TokenManager como fallback');
+      try {
+        const tokenData = await this.tokenManager.getHealthyToken(userId);
+        if (tokenData) {
+          // Convertir Token a formato TokenSelectionResult
+          return {
+            tokenId: tokenData.tokenId,
+            token: tokenData.token,
+            estimatedWaitTime: 60, // Default wait time
+            qualityScore: 80, // Default quality
+            tier: 'free' // Default tier
+          };
+        }
+      } catch (fallbackError) {
+        console.error('❌ Fallback a TokenManager también falló:', fallbackError);
+      }
+      
+      // Si todo falla, lanzar error
+      throw new Error('No healthy tokens available. Please add tokens to the pool or link a Suno account.');
     }
 
     // Select best token using weighted algorithm
@@ -171,13 +188,36 @@ export class TokenPoolService {
   }
 
   private formatTokenResult(token: TokenPool, waitTime: number, quality: number): TokenSelectionResult {
-    return {
-      tokenId: token.id,
-      token: this.decryptToken(token.encryptedToken),
-      estimatedWaitTime: waitTime,
-      qualityScore: quality,
-      tier: token.tier
-    };
+    try {
+      // Try to decrypt using TokenManager's method first (for compatibility)
+      let decryptedToken: string;
+      try {
+        // TokenManager uses AES-256-GCM format (JSON with version)
+        // TokenPoolService uses AES-256-CBC format (iv:encrypted)
+        // Try TokenManager format first, then fallback to our format
+        if (token.encryptedToken.startsWith('{')) {
+          // It's TokenManager format, use tokenManager to decrypt
+          decryptedToken = (this.tokenManager as any).decryptToken?.(token.encryptedToken) || this.decryptToken(token.encryptedToken);
+        } else {
+          // It's our format
+          decryptedToken = this.decryptToken(token.encryptedToken);
+        }
+      } catch (error) {
+        // Fallback to our decryption
+        decryptedToken = this.decryptToken(token.encryptedToken);
+      }
+
+      return {
+        tokenId: token.id,
+        token: decryptedToken,
+        estimatedWaitTime: waitTime,
+        qualityScore: quality,
+        tier: token.tier
+      };
+    } catch (error) {
+      console.error('Error decrypting token in formatTokenResult:', error);
+      throw new Error('Failed to decrypt token');
+    }
   }
 
   // ========================================
@@ -185,11 +225,29 @@ export class TokenPoolService {
   // ========================================
 
   async updateTokenHealth(tokenId: string, success: boolean, responseTime: number) {
-    const token = await this.prisma.tokenPool.findUnique({
+    // Intentar actualizar en TokenPool primero
+    let token = await this.prisma.tokenPool.findUnique({
       where: { id: tokenId }
     });
 
-    if (!token) return;
+    // Si no está en TokenPool, podría ser un token de TokenManager (fallback)
+    // En ese caso, actualizar a través de TokenManager
+    if (!token) {
+      // El tokenId podría ser de TokenManager, intentar actualizar allí
+      try {
+        await this.tokenManager.updateTokenUsage(tokenId, {
+          endpoint: '/generate',
+          method: 'POST',
+          statusCode: success ? 200 : 500,
+          responseTime: responseTime,
+          timestamp: new Date(),
+          error: success ? undefined : 'Generation failed'
+        });
+      } catch (err) {
+        console.warn(`Could not update token health for ${tokenId}:`, err);
+      }
+      return;
+    }
 
     const newSuccessCount = success ? token.successCount + 1 : token.successCount;
     const newFailureCount = success ? token.failureCount : token.failureCount + 1;
@@ -265,14 +323,49 @@ export class TokenPoolService {
       overview: {
         total_tokens: total,
         active_tokens: active,
-        utilization_rate: 0 // Placeholder
+        utilization_rate: active > 0 ? Math.round((active / total) * 100) : 0
       },
       tiers: tiers.map(t => ({ name: t.tier, count: t._count.id })),
-      performance: {
-        success_rate: 98.5, // Mock
-        avg_generation_time: 45 // Mock
-      }
+      performance: await this.calculateRealPerformance()
     };
+  }
+
+  // ========================================
+  // Real Performance Calculation
+  // ========================================
+
+  private async calculateRealPerformance(): Promise<{ success_rate: number; avg_generation_time: number }> {
+    try {
+      // Get recent token usage from last 24 hours
+      const recentUsage = await this.prisma.tokenUsage.findMany({
+        where: {
+          timestamp: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
+          }
+        },
+        orderBy: { timestamp: 'desc' },
+        take: 1000
+      });
+
+      if (recentUsage.length === 0) {
+        return { success_rate: 100, avg_generation_time: 0 };
+      }
+
+      // Calculate success rate
+      const successful = recentUsage.filter(u => u.statusCode >= 200 && u.statusCode < 300).length;
+      const success_rate = (successful / recentUsage.length) * 100;
+
+      // Calculate average generation time
+      const avg_generation_time = recentUsage.reduce((sum, u) => sum + u.responseTime, 0) / recentUsage.length;
+
+      return {
+        success_rate: Math.round(success_rate * 100) / 100,
+        avg_generation_time: Math.round(avg_generation_time)
+      };
+    } catch (error) {
+      console.error('Error calculating real performance:', error);
+      return { success_rate: 0, avg_generation_time: 0 };
+    }
   }
 
   // ========================================
@@ -319,6 +412,9 @@ export class TokenPoolService {
   public decryptToken(encryptedToken: string): string {
     try {
       const textParts = encryptedToken.split(':');
+      if (textParts.length < 2) {
+        throw new Error('Invalid encrypted token format');
+      }
       const iv = Buffer.from(textParts.shift()!, 'hex');
       const encryptedText = textParts.join(':');
       const key = crypto.scryptSync(this.encryptionKey, 'salt', 32);
@@ -328,7 +424,7 @@ export class TokenPoolService {
       return decrypted;
     } catch (error) {
       console.error('Decryption failed:', error);
-      return '';
+      throw new Error(`Failed to decrypt token: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

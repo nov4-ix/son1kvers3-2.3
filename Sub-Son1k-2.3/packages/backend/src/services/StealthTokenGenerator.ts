@@ -210,8 +210,14 @@ export class StealthTokenGenerator {
             console.warn('Temp email API failed, using fallback');
         }
 
-        // Opción 2: Formato aleatorio (si tienes dominio propio con catch-all)
-        return `neural_${Date.now()}_${this.randomString(8)}@son1k-engine.com`;
+        // Opción 2: Usar variable de entorno para dominio catch-all o generar aleatorio
+        const catchAllDomain = process.env.CATCH_ALL_EMAIL_DOMAIN;
+        if (catchAllDomain) {
+            return `neural_${Date.now()}_${this.randomString(8)}@${catchAllDomain}`;
+        }
+        
+        // Fallback: generar email único con timestamp
+        throw new Error('No email provider available. Configure CATCH_ALL_EMAIL_DOMAIN or ensure temp email API is working.');
     }
 
     /**

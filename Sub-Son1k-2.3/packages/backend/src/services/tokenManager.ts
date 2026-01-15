@@ -418,12 +418,13 @@ export class TokenManager extends EventEmitter {
       }
 
       // Fallback: Validate token haciendo una petición de prueba a la API de generación
+      // Usamos un prompt real pero con instrumental para no consumir muchos créditos
       const apiUrl = process.env.GENERATION_API_URL || process.env.NEURAL_ENGINE_API_URL || 'https://ai.imgkits.com/suno';
       const response = await axios.post(`${apiUrl}/generate`, {
-        prompt: 'test',
+        prompt: 'instrumental background music',
         lyrics: '',
-        title: '',
-        style: 'pop',
+        title: 'Token Validation',
+        style: 'ambient',
         customMode: false,
         instrumental: true
       }, {

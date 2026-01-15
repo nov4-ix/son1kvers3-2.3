@@ -1,0 +1,21 @@
+2026-01-15T12:39:52.031054Z  WARN daemon_server: turborepo_lib::commands::daemon: daemon already running
+2026-01-15T12:39:52.432395Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies\\.turbo-cookie"), AnchoredSystemPathBuf(".turbo"), AnchoredSystemPathBuf(".turbo\\cookies")}
+2026-01-15T12:39:52.433036Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-01-15T12:39:52.531109Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\da12a120ac7299c0-turbo.log.2026-01-15")}
+2026-01-15T12:39:52.531129Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-01-15T12:39:52.717926Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies\\.turbo-cookie")}
+2026-01-15T12:39:52.717947Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-01-15T12:39:53.169966Z  WARN daemon_server: turborepo_lib::commands::daemon: daemon already running
+2026-01-15T12:39:54.422622Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies\\.turbo-cookie")}
+2026-01-15T12:39:54.423405Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-01-15T12:39:54.481705Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\da12a120ac7299c0-turbo.log.2026-01-15")}
+2026-01-15T12:39:54.481761Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-01-15T12:39:57.344954Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies")}
+2026-01-15T12:39:57.345033Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2026-01-15T12:44:03.024458Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("")}
+2026-01-15T12:44:03.024545Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({}))
+2026-01-15T12:46:43.275773Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\prisma\\dev.db-journal"), AnchoredSystemPathBuf("packages\\backend\\prisma\\dev.db")}
+2026-01-15T12:46:43.275863Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@super-son1k/backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-01-15T12:46:44.862224Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\backend\\prisma"), AnchoredSystemPathBuf("packages\\backend\\prisma\\dev.db"), AnchoredSystemPathBuf("packages\\backend\\prisma\\dev.db-journal")}
+2026-01-15T12:46:44.862257Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@super-son1k/backend"), path: AnchoredSystemPathBuf("packages\\backend") }}))
+2026-01-15T12:46:44.862368Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun

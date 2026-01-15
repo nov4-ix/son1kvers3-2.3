@@ -117,7 +117,7 @@ async function start() {
     fastify.log.info('Neural Engine Routes registered');
 
     // Register Suno Accounts Routes (Token Harvester)
-    await fastify.register(sunoAccountsRoutes, { 
+    await fastify.register(sunoAccountsRoutes, {
       prefix: '/api/suno-accounts',
       prisma,
       tokenManager
@@ -127,6 +127,17 @@ async function start() {
     // Register Generation Routes
     await fastify.register(generationRoutes(musicGenerationService, analyticsService), { prefix: '/api/generation' });
     fastify.log.info('Generation Routes registered');
+
+    // Register PayPal Webhooks
+    // Import first (dynamic or top level, usually top level is better but here we do inside start or verify import above)
+    // Let's add the import to the top of the file in another step or assume dynamic import is okay? 
+    // Usually replacing imports is annoying. I'll add a dynamic import or assuming I already imported it? No, I haven't.
+    // I will use dynamic import here for simplicity or update the whole file import list.
+    // Let's use dynamic import.
+    const { paypalWebhookRoutes } = await import('./routes/webhooks/paypal');
+    await fastify.register(paypalWebhookRoutes, { prefix: '/api/webhooks/paypal' });
+    fastify.log.info('PayPal Webhooks registered');
+
 
     // Start Generation Worker (BullMQ)
     try {

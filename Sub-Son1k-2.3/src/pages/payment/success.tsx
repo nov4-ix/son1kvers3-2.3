@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { CheckCircleIcon } from '@heroicons/react/24/outline';
+import { CheckCircle } from 'lucide-react';
 
 export default function PaymentSuccess() {
   const router = useRouter();
@@ -108,7 +108,7 @@ export default function PaymentSuccess() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <div className="text-center">
-            <CheckCircleIcon className="mx-auto h-16 w-16 text-green-500" />
+            <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
             <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
               ¡Pago exitoso!
             </h2>

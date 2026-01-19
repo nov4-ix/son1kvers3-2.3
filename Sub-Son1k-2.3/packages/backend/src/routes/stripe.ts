@@ -2,24 +2,27 @@ import { FastifyInstance } from 'fastify'
 import Stripe from 'stripe'
 import { SupabaseAuthService } from '../services/supabaseAuth'
 import { supabaseAuthMiddleware } from '../middleware/supabaseAuth'
+import { AnalyticsService } from '../services/analyticsService'
 
 // ✅ Inicializar Stripe solo si está configurado
 let stripe: Stripe | null = null
 try {
   if (process.env.STRIPE_SECRET_KEY) {
     stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2023-08-16'
-})
+      apiVersion: '2023-08-16'
+    })
   }
 } catch (error) {
   console.warn('Stripe no configurado. Los pagos no estarán disponibles.')
 }
 
-export async function stripeRoutes(fastify: FastifyInstance) {
+export async function stripeRoutes(fastify: FastifyInstance, options: { analyticsService: AnalyticsService }) {
   const supabaseAuth = new SupabaseAuthService(fastify.prisma)
+  const { analyticsService } = options
 
   // ✅ Verificar si Stripe está configurado
   if (!stripe) {
+    // ... same logic for /plans ...
     fastify.get('/plans', async (request, reply) => {
       return {
         success: true,
@@ -39,11 +42,12 @@ export async function stripeRoutes(fastify: FastifyInstance) {
         message: 'Stripe no configurado. Solo plan FREE disponible.'
       }
     })
-    return // No registrar otras rutas si Stripe no está configurado
+    return
   }
 
   // Get available plans
   fastify.get('/plans', async (request, reply) => {
+    // ... same plans ...
     const plans = [
       {
         id: 'free',
@@ -60,7 +64,7 @@ export async function stripeRoutes(fastify: FastifyInstance) {
         id: 'pro',
         name: 'PRO',
         price: 9.99,
-        monthlyGenerations: 50,
+        monthlyGenerations: 100,
         dailyGenerations: 10,
         maxDuration: 120,
         quality: 'high',
@@ -71,7 +75,7 @@ export async function stripeRoutes(fastify: FastifyInstance) {
         id: 'premium',
         name: 'PREMIUM',
         price: 29.99,
-        monthlyGenerations: 200,
+        monthlyGenerations: 500,
         dailyGenerations: 25,
         maxDuration: 300,
         quality: 'premium',
@@ -82,7 +86,7 @@ export async function stripeRoutes(fastify: FastifyInstance) {
         id: 'enterprise',
         name: 'ENTERPRISE',
         price: 99.99,
-        monthlyGenerations: 1000,
+        monthlyGenerations: 10000,
         dailyGenerations: 100,
         maxDuration: 600,
         quality: 'enterprise',
@@ -106,9 +110,9 @@ export async function stripeRoutes(fastify: FastifyInstance) {
 
     try {
       const plans = {
-        pro: process.env.STRIPE_PRO_PRICE_ID,
-        premium: process.env.STRIPE_PREMIUM_PRICE_ID,
-        enterprise: process.env.STRIPE_ENTERPRISE_PRICE_ID
+        pro: process.env.STRIPE_PRO_PRICE_ID || 'price_pro_xxx',
+        premium: process.env.STRIPE_PREMIUM_PRICE_ID || 'price_premium_xxx',
+        enterprise: process.env.STRIPE_ENTERPRISE_PRICE_ID || 'price_enterprise_xxx'
       }
 
       const priceId = plans[planId as keyof typeof plans]
@@ -274,7 +278,7 @@ export async function stripeRoutes(fastify: FastifyInstance) {
     let event: Stripe.Event
 
     try {
-      event = stripe.webhooks.constructEvent(request.body as string, sig, webhookSecret)
+      event = stripe!.webhooks.constructEvent(request.body as string, sig, webhookSecret)
     } catch (error) {
       console.error('Webhook signature verification failed:', error)
       return reply.code(400).send({
@@ -328,10 +332,7 @@ export async function stripeRoutes(fastify: FastifyInstance) {
 
   // Helper functions for webhook handling
   async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-    if (!stripe) {
-      console.warn('Stripe not configured, cannot handle checkout')
-      return
-    }
+    if (!stripe) return
 
     const userId = session.metadata?.userId
     const planId = session.metadata?.planId
@@ -342,7 +343,7 @@ export async function stripeRoutes(fastify: FastifyInstance) {
     }
 
     const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
-    
+
     // Update user tier
     await supabaseAuth.updateUserTier(
       userId,
@@ -351,12 +352,17 @@ export async function stripeRoutes(fastify: FastifyInstance) {
       subscription.id
     )
 
+    // Track analytics
+    if (analyticsService) {
+      await analyticsService.trackSubscriptionChange(userId, planId.toUpperCase(), 'STRIPE')
+    }
+
     console.log(`User ${userId} upgraded to ${planId}`)
   }
 
   async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     const customerId = subscription.customer as string
-    
+
     const userTier = await fastify.prisma.userTier.findUnique({
       where: { stripeCustomerId: customerId }
     })
@@ -380,7 +386,7 @@ export async function stripeRoutes(fastify: FastifyInstance) {
 
   async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     const customerId = subscription.customer as string
-    
+
     const userTier = await fastify.prisma.userTier.findUnique({
       where: { stripeCustomerId: customerId }
     })
@@ -393,12 +399,17 @@ export async function stripeRoutes(fastify: FastifyInstance) {
     // Downgrade to FREE tier
     await supabaseAuth.updateUserTier(userTier.userId, 'FREE')
 
+    // Track analytics
+    if (analyticsService) {
+      await analyticsService.trackSubscriptionChange(userTier.userId, 'FREE', 'STRIPE')
+    }
+
     console.log(`User ${userTier.userId} downgraded to FREE`)
   }
 
   async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     const customerId = invoice.customer as string
-    
+
     const userTier = await fastify.prisma.userTier.findUnique({
       where: { stripeCustomerId: customerId }
     })
@@ -422,7 +433,7 @@ export async function stripeRoutes(fastify: FastifyInstance) {
 
   async function handlePaymentFailed(invoice: Stripe.Invoice) {
     const customerId = invoice.customer as string
-    
+
     const userTier = await fastify.prisma.userTier.findUnique({
       where: { stripeCustomerId: customerId }
     })
@@ -443,3 +454,4 @@ export async function stripeRoutes(fastify: FastifyInstance) {
     console.log(`Payment failed for user ${userTier.userId}`)
   }
 }
+

@@ -324,7 +324,9 @@ Return ONLY the post content and hashtags, no explanations or meta-commentary.`;
     } {
         const errors: string[] = [];
         const warnings: string[] = [];
-        const { metadata: { platform }, content: text } = content;
+        const metadata = (content as any).metadata || {};
+const platform = metadata.platform || '';
+const text = (content as any).content || '';
 
         // Platform-specific validation
         switch (platform.toLowerCase()) {

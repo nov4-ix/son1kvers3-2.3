@@ -24,8 +24,9 @@ export function PixelWidget({ userId, onAction }: PixelWidgetProps) {
 
     const loadGreeting = async () => {
         try {
+            const apiUrl = (import.meta.env?.VITE_API_URL as string) || 'http://localhost:3000';
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/api/pixel/greeting/${userId}`
+                `${apiUrl}/api/pixel/greeting/${userId}`
             );
             const data = await response.json();
 
@@ -87,8 +88,9 @@ export function PixelWidget({ userId, onAction }: PixelWidgetProps) {
 
     const getSuggestion = async (context: string) => {
         try {
+            const apiUrl = (import.meta.env?.VITE_API_URL as string) || 'http://localhost:3000';
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/api/pixel/suggest`,
+                `${apiUrl}/api/pixel/suggest`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

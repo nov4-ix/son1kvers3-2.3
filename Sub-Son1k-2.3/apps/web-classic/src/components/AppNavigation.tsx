@@ -73,10 +73,8 @@ export const AppNavigation: React.FC = () => {
                                 <div className="p-3 bg-[#40FDAE]/5">
                                     <p className="text-xs font-bold text-[#40FDAE] mb-2">🎵 En The Generator:</p>
                                     <div className="space-y-2">
-                                        <a
-                                            href="https://the-generator-gpzj6pn9y-son1kvers3s-projects-c805d053.vercel.app"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
+                                        <Link
+                                            to="/generator"
                                             className="flex items-start gap-2 text-sm hover:bg-[#40FDAE]/10 p-2 rounded transition-colors"
                                         >
                                             <span>🎤</span>
@@ -84,7 +82,7 @@ export const AppNavigation: React.FC = () => {
                                                 <div className="font-medium text-white">Lyric Studio</div>
                                                 <div className="text-xs text-gray-400">Generación de letras con IA</div>
                                             </div>
-                                        </a>
+                                        </Link>
                                         <div className="flex items-start gap-2 text-sm p-2">
                                             <span>⌘</span>
                                             <div>

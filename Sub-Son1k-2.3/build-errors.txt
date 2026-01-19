@@ -1,0 +1,60 @@
+
+> super-son1k-2.2@2.2.0 build
+> turbo build --concurrency=1
+
+• Packages in scope: @son1k/alvae-system, @son1k/community-pool, @son1k/pixel-companion, @son1k/tiers, @super-son1k/backend, @super-son1k/shared-hooks, @super-son1k/shared-services, @super-son1k/shared-types, @super-son1k/shared-ui, @super-son1k/shared-utils, @super-son1k/the-generator, @super-son1k/web-classic, son1k-audio-engine
+• Running build in 13 packages
+• Remote caching disabled
+@super-son1k/shared-utils:build: cache miss, executing ffba3e741f24102c
+@super-son1k/shared-utils:build: 
+@super-son1k/shared-utils:build: > @super-son1k/shared-utils@1.0.0 build C:\Users\qrrom\Downloads\Sub-Son1k-2.3\Sub-Son1k-2.3\packages\shared-utils
+@super-son1k/shared-utils:build: > tsc
+@super-son1k/shared-utils:build: 
+@super-son1k/shared-types:build: cache hit, replaying logs e509fac0f11115ad
+@super-son1k/shared-types:build: 
+@super-son1k/shared-types:build: > @super-son1k/shared-types@2.2.0 build C:\Users\qrrom\Downloads\Sub-Son1k-2.3\Sub-Son1k-2.3\packages\shared-types
+@super-son1k/shared-types:build: > tsc
+@super-son1k/shared-types:build: 
+@son1k/pixel-companion:build: cache miss, executing 1006057bf2498d83
+@son1k/pixel-companion:build: 
+@son1k/pixel-companion:build: > @son1k/pixel-companion@1.0.0 build C:\Users\qrrom\Downloads\Sub-Son1k-2.3\Sub-Son1k-2.3\packages\pixel-companion
+@son1k/pixel-companion:build: > tsc && vite build
+@son1k/pixel-companion:build: 
+@son1k/pixel-companion:build: ../../_legacy_archive/unused_apps/the-generator-nextjs/.next/dev/types/routes.d.ts(58,15): error TS1005: ';' expected.
+@son1k/pixel-companion:build: ../../_legacy_archive/unused_apps/the-generator-nextjs/.next/dev/types/routes.d.ts(60,5): error TS1005: ',' expected.
+@son1k/pixel-companion:build: ../../_legacy_archive/unused_apps/the-generator-nextjs/.next/dev/types/routes.d.ts(92,1): error TS1128: Declaration or statement expected.
+@son1k/pixel-companion:build: ../../_legacy_archive/unused_apps/the-generator-nextjs/.next/dev/types/routes.d.ts(94,3): error TS1128: Declaration or statement expected.
+@son1k/pixel-companion:build: ../../_legacy_archive/unused_apps/the-generator-nextjs/.next/dev/types/routes.d.ts(109,1): error TS1128: Declaration or statement expected.
+@son1k/pixel-companion:build: ../../src/pages/api/stripe/webhook.ts(9,3): error TS1127: Invalid character.
+@son1k/pixel-companion:build:  ELIFECYCLE  Command failed with exit code 1.
+@son1k/pixel-companion:build: ERROR: command finished with error: command (C:\Users\qrrom\Downloads\Sub-Son1k-2.3\Sub-Son1k-2.3\packages\pixel-companion) C:\Users\qrrom\AppData\Roaming\npm\pnpm.cmd run build exited (1)
+@son1k/tiers:build: cache miss, executing f97fd5cc923639bb
+@son1k/alvae-system:build: cache miss, executing 4918acbb9e40b6b1
+son1k-audio-engine:build: cache hit, replaying logs 9c56ac7ef9de17bc
+son1k-audio-engine:build: 
+son1k-audio-engine:build: > son1k-audio-engine@2.2.0 build C:\Users\qrrom\Downloads\Sub-Son1k-2.3\Sub-Son1k-2.3\extensions\son1k-audio-engine
+son1k-audio-engine:build: > node build.js
+son1k-audio-engine:build: 
+son1k-audio-engine:build: 🔨 Building Son1k Audio Engine...
+son1k-audio-engine:build: 
+son1k-audio-engine:build: Processing background.js...
+son1k-audio-engine:build: ✅ background.min.js created
+son1k-audio-engine:build: 
+son1k-audio-engine:build: Processing content.js...
+son1k-audio-engine:build: ✅ content.min.js created
+son1k-audio-engine:build: 
+son1k-audio-engine:build: 📋 Copied manifest.json
+son1k-audio-engine:build: 📋 Copied options.html
+son1k-audio-engine:build: 
+son1k-audio-engine:build: ✨ Build completed successfully!
+son1k-audio-engine:build: 📦 Extension ready in: C:\Users\qrrom\Downloads\Sub-Son1k-2.3\Sub-Son1k-2.3\extensions\son1k-audio-engine\build
+@son1k/community-pool:build: cache miss, executing 6c1b4fe72f7d6c20
+@super-son1k/backend:build: cache miss, executing ab9fc1c23c238e59
+@son1k/pixel-companion#build: command (C:\Users\qrrom\Downloads\Sub-Son1k-2.3\Sub-Son1k-2.3\packages\pixel-companion) C:\Users\qrrom\AppData\Roaming\npm\pnpm.cmd run build exited (1)
+
+ Tasks:    3 successful, 8 total
+Cached:    2 cached, 8 total
+  Time:    1m57.359s 
+Failed:    @son1k/pixel-companion#build
+
+ ERROR  run failed: command  exited (1)

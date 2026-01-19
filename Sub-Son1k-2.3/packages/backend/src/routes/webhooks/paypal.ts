@@ -1,167 +1,146 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { PayPalService } from '../../services/paypal.service';
+import { AnalyticsService } from '../../services/analyticsService';
 
-export async function paypalWebhookRoutes(fastify: any, options: any) {
-    const prisma: PrismaClient = fastify.prisma;
+export async function paypalWebhookRoutes(fastify: FastifyInstance, options: { analyticsService: AnalyticsService }) {
+  const paypalService = new PayPalService(fastify.prisma);
+  const { analyticsService } = options;
 
-    fastify.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
-        // Verificar webhook signature
-        const isValid = await verifyPayPalWebhook(request);
+  fastify.post('/webhook', async (request: FastifyRequest, reply: FastifyReply) => {
+    const event = request.body as any;
+    const eventType = event.event_type;
 
-        if (!isValid) {
-            // Note: For dev/sandbox we might want to be lenient or log only
-            // return reply.code(401).send('Invalid webhook signature');
-            console.warn('⚠️ Invalid PayPal Webhook Signature (ignored for dev)');
-        }
+    fastify.log.info({ eventType }, 'Received PayPal webhook');
 
-        const event = request.body as any;
+    try {
+      switch (eventType) {
+        case 'BILLING.SUBSCRIPTION.ACTIVATED':
+        case 'BILLING.SUBSCRIPTION.CREATED': {
+          const subscriptionId = event.resource.id;
+          const planId = event.resource.plan_id;
+          const userId = event.resource.custom_id;
 
-        console.log('PayPal Webhook Received:', event.event_type);
+          if (userId) {
+            // Mapping planId to our Internal Plans
+            let planName: 'BASIC' | 'PRO' | 'ENTERPRISE' = 'BASIC';
+            let generationsLimit = 100;
 
-        try {
-            switch (event.event_type) {
-                case 'BILLING.SUBSCRIPTION.ACTIVATED':
-                    await handleSubscriptionActivated(event, prisma);
-                    break;
-
-                case 'BILLING.SUBSCRIPTION.CANCELLED':
-                    await handleSubscriptionCancelled(event, prisma);
-                    break;
-
-                case 'BILLING.SUBSCRIPTION.SUSPENDED':
-                    await handleSubscriptionSuspended(event, prisma);
-                    break;
-
-                case 'PAYMENT.SALE.COMPLETED':
-                    await handlePaymentCompleted(event, prisma);
-                    break;
-
-                // case 'PAYMENT.SALE.REFUNDED':
-                //     await handlePaymentRefunded(event, prisma);
-                //     break;
+            // Example mapping (adjust according to your PayPal Plans)
+            // Using includes to match plan IDs like 'P-BASIC-XXX'
+            const lowerPlanId = planId.toLowerCase();
+            if (lowerPlanId.includes('pro')) {
+              planName = 'PRO';
+              generationsLimit = 500;
+            } else if (lowerPlanId.includes('enterprise') || lowerPlanId.includes('premium')) {
+              planName = 'ENTERPRISE';
+              generationsLimit = 10000; // Unlimited placeholder
+            } else if (lowerPlanId.includes('basic')) {
+              planName = 'BASIC';
+              generationsLimit = 100;
             }
-        } catch (error) {
-            console.error('Error processing PayPal webhook:', error);
-            return reply.code(500).send({ error: 'Webhook processing failed' });
+
+            await fastify.prisma.subscription.upsert({
+              where: { paypalSubscriptionId: subscriptionId },
+              update: {
+                status: 'ACTIVE',
+                plan: planName,
+                generationsLimit
+              },
+              create: {
+                userId,
+                paypalSubscriptionId: subscriptionId,
+                paypalPlanId: planId,
+                paymentProvider: 'PAYPAL',
+                plan: planName,
+                status: 'ACTIVE',
+                generationsLimit
+              }
+            });
+
+            // Update UserTier too for compatibility with existing system
+            await fastify.prisma.userTier.upsert({
+              where: { userId },
+              update: {
+                tier: planName,
+                subscriptionStatus: 'ACTIVE',
+                monthlyGenerations: generationsLimit
+              },
+              create: {
+                userId,
+                tier: planName,
+                subscriptionStatus: 'ACTIVE',
+                monthlyGenerations: generationsLimit
+              }
+            });
+
+            // Also update the User model directly if it has a tier field
+            await fastify.prisma.user.update({
+              where: { id: userId },
+              data: {
+                tier: planName,
+                subscriptionStatus: 'ACTIVE'
+              }
+            });
+
+            // Track analytics
+            if (analyticsService) {
+              await analyticsService.trackSubscriptionChange(userId, planName, 'PAYPAL');
+            }
+
+            fastify.log.info(`User ${userId} subscription ${subscriptionId} activated with plan ${planName}`);
+          } else {
+            fastify.log.warn(`Received PayPal webhook for subscription ${event.resource.id} but no custom_id (userId) was found`);
+          }
+          break;
         }
 
-        reply.send({ received: true });
-    });
-}
+        case 'BILLING.SUBSCRIPTION.CANCELLED':
+        case 'BILLING.SUBSCRIPTION.EXPIRED':
+        case 'BILLING.SUBSCRIPTION.SUSPENDED': {
+          const subscriptionId = event.resource.id;
 
-async function verifyPayPalWebhook(request: FastifyRequest): Promise<boolean> {
-    // TODO: Implement proper signature verification
-    // Requires fetching cert from PayPal and verifying SHA256 signature
-    // const webhookId = process.env.PAYPAL_WEBHOOK_ID!;
-    // const headers = request.headers;
-    // const body = request.body;
-    return true;
-}
+          const sub = await fastify.prisma.subscription.update({
+            where: { paypalSubscriptionId: subscriptionId },
+            data: { status: 'CANCELED' }
+          });
 
-async function handleSubscriptionActivated(event: any, prisma: PrismaClient) {
-    const subscriptionId = event.resource.id;
-    const userId = event.resource.custom_id;
-    const planId = event.resource.plan_id;
+          if (sub) {
+            await fastify.prisma.userTier.update({
+              where: { userId: sub.userId },
+              data: {
+                tier: 'FREE',
+                subscriptionStatus: 'CANCELED',
+                monthlyGenerations: 5
+              }
+            });
 
-    // Mapear plan ID a tier
-    // Ensure these env vars are set or use fallback/lookup
-    const planMapping: Record<string, { plan: string; limit: number }> = {
-        [process.env.PAYPAL_PLAN_BASIC || 'P-BASIC']: { plan: 'BASIC', limit: 100 },
-        [process.env.PAYPAL_PLAN_PRO || 'P-PRO']: { plan: 'PRO', limit: 500 },
-        [process.env.PAYPAL_PLAN_ENTERPRISE || 'P-ENTERPRISE']: { plan: 'ENTERPRISE', limit: 999999 },
-    };
+            await fastify.prisma.user.update({
+              where: { id: sub.userId },
+              data: {
+                tier: 'FREE',
+                subscriptionStatus: 'CANCELED'
+              }
+            });
 
-    // Si no está en el mapa, intentar deducir o usar default
-    const planInfo = planMapping[planId] || { plan: 'BASIC', limit: 100 };
+            // Track analytics
+            if (analyticsService) {
+              await analyticsService.trackSubscriptionChange(sub.userId, 'FREE', 'PAYPAL');
+            }
+          }
 
-    if (!userId) {
-        console.error('PayPal Webhook: No custom_id (userId) found in resource');
-        return;
+          fastify.log.info(`Subscription ${subscriptionId} deactivated`);
+          break;
+        }
+
+        default:
+          fastify.log.info(`Unhandled PayPal event type: ${eventType}`);
+      }
+
+      return reply.send({ received: true });
+    } catch (error) {
+      fastify.log.error(error, 'Error processing PayPal webhook');
+      return reply.code(500).send({ error: 'Webhook processing failed' });
     }
-
-    // Use DB enums
-    const planEnum = planInfo.plan as 'FREE' | 'BASIC' | 'PRO' | 'ENTERPRISE';
-
-    // Upsert Subscription
-    await prisma.subscription.upsert({
-        where: { userId },
-        create: {
-            userId,
-            paypalSubscriptionId: subscriptionId,
-            paypalPlanId: planId,
-            paymentProvider: 'PAYPAL',
-            plan: planEnum,
-            status: 'ACTIVE',
-            generationsLimit: planInfo.limit,
-            currentPeriodEnd: event.resource.billing_info?.next_billing_time ? new Date(event.resource.billing_info.next_billing_time) : undefined,
-        },
-        update: {
-            paypalSubscriptionId: subscriptionId,
-            paypalPlanId: planId,
-            paymentProvider: 'PAYPAL', // Switch provider if was Stripe
-            plan: planEnum,
-            status: 'ACTIVE',
-            generationsLimit: planInfo.limit,
-            currentPeriodEnd: event.resource.billing_info?.next_billing_time ? new Date(event.resource.billing_info.next_billing_time) : undefined,
-        },
-    });
-
-    // Update UserTier to match
-    await prisma.userTier.upsert({
-        where: { userId },
-        create: {
-            userId,
-            tier: planEnum,
-            monthlyGenerations: planInfo.limit,
-            subscriptionStatus: 'active'
-        },
-        update: {
-            tier: planEnum,
-            monthlyGenerations: planInfo.limit,
-            subscriptionStatus: 'active'
-        }
-    });
-
-    console.log(`✅ Subscription Activated for user ${userId} (Plan: ${planInfo.plan})`);
+  });
 }
 
-async function handleSubscriptionCancelled(event: any, prisma: PrismaClient) {
-    const subscriptionId = event.resource.id;
-
-    await prisma.subscription.updateMany({
-        where: { paypalSubscriptionId: subscriptionId },
-        data: {
-            status: 'CANCELED',
-            canceledAt: new Date(),
-        },
-    });
-    console.log(`⚠️ Subscription Cancelled: ${subscriptionId}`);
-}
-
-async function handleSubscriptionSuspended(event: any, prisma: PrismaClient) {
-    const subscriptionId = event.resource.id;
-
-    await prisma.subscription.updateMany({
-        where: { paypalSubscriptionId: subscriptionId },
-        data: {
-            status: 'SUSPENDED',
-        },
-    });
-    console.log(`⛔ Subscription Suspended: ${subscriptionId}`);
-}
-
-async function handlePaymentCompleted(event: any, prisma: PrismaClient) {
-    // Resetear contador mensual
-    const subscriptionId = event.resource.billing_agreement_id;
-
-    if (!subscriptionId) return;
-
-    await prisma.subscription.updateMany({
-        where: { paypalSubscriptionId: subscriptionId },
-        data: {
-            generationsUsed: 0,
-            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 días aprox
-        },
-    });
-    console.log(`💰 Payment Completed for subscription: ${subscriptionId}`);
-}

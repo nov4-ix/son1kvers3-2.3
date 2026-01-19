@@ -248,8 +248,8 @@ export function startGenerationWorker() {
                                 taskId: taskId,
                                 startedAt: new Date().toISOString()
                             })
-                        }
-                    });
+                    }
+                });
                 }
 
                 return { success: true, taskId, ...result };
@@ -285,8 +285,8 @@ export function startGenerationWorker() {
                     data: {
                         status: 'FAILED',
                         error: errorMessage
-                    }
-                });
+                }
+            });
             }
 
             throw error;

@@ -106,7 +106,7 @@ export class StealthTokenGenerator {
 
             // 2. Abrir navegador en modo stealth
             browser = await puppeteer.launch({
-                headless: 'new',
+                headless: true,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
@@ -264,7 +264,7 @@ export class StealthTokenGenerator {
     private async simulateHumanBehavior(page: Page) {
         // Scroll aleatorio
         await page.evaluate(() => {
-            window.scrollBy(0, Math.random() * 500);
+            (window as any).scrollBy(0, Math.random() * 500);
         });
         await this.sleep(1000 + Math.random() * 2000);
 
@@ -440,7 +440,7 @@ export class StealthTokenGenerator {
      */
     private async restoreSession(account: any): Promise<Browser> {
         const browser = await puppeteer.launch({
-            headless: 'new',
+            headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
 

@@ -5,7 +5,7 @@ const supabaseUrl = process.env.SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 // Create Supabase client only if environment variables are provided
-export const supabase = supabaseUrl && supabaseServiceKey 
+export const supabase = supabaseUrl && supabaseServiceKey
   ? createClient(supabaseUrl, supabaseServiceKey)
   : null
 
@@ -81,29 +81,36 @@ export class SupabaseAuthService {
   async createUserTier(userId: string, tier: string) {
     const tierConfigs = {
       FREE: {
-        monthlyGenerations: 3,
-        dailyGenerations: 2,
+        monthlyGenerations: 10,
+        dailyGenerations: 5,
         maxDuration: 60,
         quality: 'standard',
         features: ['basic_generation', 'community_access']
       },
+      BASIC: {
+        monthlyGenerations: 100,
+        dailyGenerations: 20,
+        maxDuration: 120,
+        quality: 'standard',
+        features: ['basic_generation', 'community_access']
+      },
       PRO: {
-        monthlyGenerations: 50,
-        dailyGenerations: 10,
+        monthlyGenerations: 500,
+        dailyGenerations: 50,
         maxDuration: 120,
         quality: 'high',
         features: ['basic_generation', 'community_access', 'priority_support', 'advanced_controls']
       },
       PREMIUM: {
-        monthlyGenerations: 200,
-        dailyGenerations: 25,
+        monthlyGenerations: 1000,
+        dailyGenerations: 100,
         maxDuration: 300,
         quality: 'premium',
         features: ['basic_generation', 'community_access', 'priority_support', 'advanced_controls', 'collaboration', 'commercial_use']
       },
       ENTERPRISE: {
-        monthlyGenerations: 1000,
-        dailyGenerations: 100,
+        monthlyGenerations: 10000,
+        dailyGenerations: 500,
         maxDuration: 600,
         quality: 'enterprise',
         features: ['basic_generation', 'community_access', 'priority_support', 'advanced_controls', 'collaboration', 'commercial_use', 'api_access', 'white_label']
@@ -141,19 +148,71 @@ export class SupabaseAuthService {
       where: { userId }
     })
 
+    const tierConfigs = {
+      FREE: {
+        monthlyGenerations: 10,
+        dailyGenerations: 5,
+        maxDuration: 60,
+        quality: 'standard',
+        features: ['basic_generation', 'community_access']
+      },
+      BASIC: {
+        monthlyGenerations: 100,
+        dailyGenerations: 20,
+        maxDuration: 120,
+        quality: 'standard',
+        features: ['basic_generation', 'community_access']
+      },
+      PRO: {
+        monthlyGenerations: 500,
+        dailyGenerations: 50,
+        maxDuration: 120,
+        quality: 'high',
+        features: ['basic_generation', 'community_access', 'priority_support', 'advanced_controls']
+      },
+      PREMIUM: {
+        monthlyGenerations: 1000,
+        dailyGenerations: 100,
+        maxDuration: 300,
+        quality: 'premium',
+        features: ['basic_generation', 'community_access', 'priority_support', 'advanced_controls', 'collaboration', 'commercial_use']
+      },
+      ENTERPRISE: {
+        monthlyGenerations: 10000,
+        dailyGenerations: 500,
+        maxDuration: 600,
+        quality: 'enterprise',
+        features: ['basic_generation', 'community_access', 'priority_support', 'advanced_controls', 'collaboration', 'commercial_use', 'api_access', 'white_label']
+      }
+    }
+
+    const config = tierConfigs[newTier as keyof typeof tierConfigs] || tierConfigs.FREE
+
     if (existingUserTier) {
       await this.prisma.userTier.update({
         where: { userId },
         data: {
           tier: newTier,
+          monthlyGenerations: config.monthlyGenerations,
+          dailyGenerations: config.dailyGenerations,
+          maxDuration: config.maxDuration,
+          quality: config.quality,
+          features: config.features.join(','),
           stripeCustomerId,
           stripeSubscriptionId,
           subscriptionStatus: 'active',
-          subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+          subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
         }
       })
     } else {
       await this.createUserTier(userId, newTier)
+      // If we have stripe IDs, update them too (createUserTier only sets defaults)
+      if (stripeCustomerId || stripeSubscriptionId) {
+        await this.prisma.userTier.update({
+          where: { userId },
+          data: { stripeCustomerId, stripeSubscriptionId }
+        })
+      }
     }
   }
 
@@ -168,7 +227,7 @@ export class SupabaseAuthService {
 
   async checkGenerationLimit(userId: string): Promise<{ allowed: boolean; reason?: string; limits: any }> {
     const user = await this.getUserWithTier(userId)
-    
+
     if (!user || !user.userTier) {
       return { allowed: false, reason: 'User not found or no tier assigned', limits: {} }
     }
@@ -178,8 +237,8 @@ export class SupabaseAuthService {
 
     // Check monthly limit
     if (userTier.usedThisMonth >= userTier.monthlyGenerations) {
-      return { 
-        allowed: false, 
+      return {
+        allowed: false,
         reason: 'Monthly generation limit reached',
         limits: {
           monthly: { used: userTier.usedThisMonth, limit: userTier.monthlyGenerations },
@@ -190,8 +249,8 @@ export class SupabaseAuthService {
 
     // Check daily limit
     if (userTier.usedToday >= userTier.dailyGenerations) {
-      return { 
-        allowed: false, 
+      return {
+        allowed: false,
         reason: 'Daily generation limit reached',
         limits: {
           monthly: { used: userTier.usedThisMonth, limit: userTier.monthlyGenerations },
@@ -200,7 +259,7 @@ export class SupabaseAuthService {
       }
     }
 
-    return { 
+    return {
       allowed: true,
       limits: {
         monthly: { used: userTier.usedThisMonth, limit: userTier.monthlyGenerations },
@@ -257,7 +316,7 @@ export class SupabaseAuthService {
 
     try {
       const { data: { user }, error } = await supabase.auth.getUser(token)
-      
+
       if (error || !user) {
         return null
       }

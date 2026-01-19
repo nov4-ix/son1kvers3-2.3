@@ -130,7 +130,7 @@ export class MusicGenerationService {
       } else {
         // ✅ MODO SIN REDIS: Procesar directamente (síncrono pero funcional)
         console.log(`[MusicGenerationService] Queue disabled - processing directly for queueId: ${queueItem.id}`);
-        
+
         // Procesar en background sin bloquear la respuesta
         setImmediate(async () => {
           try {
@@ -500,7 +500,7 @@ export class MusicGenerationService {
     try {
       // Get User Tier
       const user = await this.prisma.user.findUnique({ where: { id: request.userId } });
-      const userTier = (user?.tier || 'free').toLowerCase() as 'free' | 'pro' | 'enterprise';
+      const userTier = (user?.tier || 'free').toLowerCase() as 'free' | 'basic' | 'pro' | 'enterprise';
 
       // Get Token
       let tokenStr: string;
@@ -548,7 +548,7 @@ export class MusicGenerationService {
 
       if (response.status === 200 && response.data) {
         const taskId = response.data.taskId || response.data.id || response.data.task_id;
-        
+
         await this.prisma.generationQueue.update({
           where: { id: queueId },
           data: {
@@ -578,7 +578,7 @@ export class MusicGenerationService {
       }
     } catch (error: any) {
       console.error(`[MusicGenerationService] Direct processing error:`, error);
-      
+
       await this.prisma.generationQueue.update({
         where: { id: queueId },
         data: {

@@ -43,8 +43,9 @@ export function usePixel(userId: string) {
     const loadProfile = async () => {
         setLoading(true);
         try {
+            const apiUrl = (import.meta.env?.VITE_API_URL as string) || 'http://localhost:3000';
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/api/pixel/profile/${userId}`
+                `${apiUrl}/api/pixel/profile/${userId}`
             );
 
             if (!response.ok) {
@@ -63,8 +64,9 @@ export function usePixel(userId: string) {
 
     const getSuggestion = async (context?: string): Promise<PixelSuggestion | null> => {
         try {
+            const apiUrl = (import.meta.env?.VITE_API_URL as string) || 'http://localhost:3000';
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/api/pixel/suggest`,
+                `${apiUrl}/api/pixel/suggest`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -87,8 +89,9 @@ export function usePixel(userId: string) {
 
     const celebrate = async (milestone: string) => {
         try {
+            const apiUrl = (import.meta.env?.VITE_API_URL as string) || 'http://localhost:3000';
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/api/pixel/celebrate`,
+                `${apiUrl}/api/pixel/celebrate`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -109,8 +112,9 @@ export function usePixel(userId: string) {
 
     const getGreeting = async () => {
         try {
+            const apiUrl = (import.meta.env?.VITE_API_URL as string) || 'http://localhost:3000';
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/api/pixel/greeting/${userId}`
+                `${apiUrl}/api/pixel/greeting/${userId}`
             );
 
             if (!response.ok) {

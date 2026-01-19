@@ -199,23 +199,126 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@20.19.27)(jsdom@24.1.3)(tsx@3.14.0)
 
+  apps/ghost-studio:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.27
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  apps/nova-post-pilot:
+    dependencies:
+      '@hookform/resolvers':
+        specifier: ^5.2.2
+        version: 5.2.2(react-hook-form@7.68.0)
+      '@super-son1k/shared-ui':
+        specifier: workspace:*
+        version: link:../../packages/shared-ui
+      '@super-son1k/shared-utils':
+        specifier: workspace:*
+        version: link:../../packages/shared-utils
+      axios:
+        specifier: ^1.6.0
+        version: 1.13.2
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      framer-motion:
+        specifier: ^10.18.0
+        version: 10.18.0(react-dom@18.3.1)(react@18.3.1)
+      i18next:
+        specifier: ^23.7.6
+        version: 23.16.8
+      i18next-browser-languagedetector:
+        specifier: ^7.2.0
+        version: 7.2.2
+      lucide-react:
+        specifier: ^0.545.0
+        version: 0.545.0(react@18.3.1)
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+      react-hook-form:
+        specifier: ^7.65.0
+        version: 7.68.0(react@18.3.1)
+      react-hot-toast:
+        specifier: ^2.6.0
+        version: 2.6.0(react-dom@18.3.1)(react@18.3.1)
+      react-i18next:
+        specifier: ^13.5.0
+        version: 13.5.0(i18next@23.16.8)(react-dom@18.3.1)(react@18.3.1)
+      react-router-dom:
+        specifier: ^7.9.4
+        version: 7.11.0(react-dom@18.3.1)(react@18.3.1)
+      tailwind-merge:
+        specifier: ^2.6.0
+        version: 2.6.0
+      zod:
+        specifier: ^4.1.12
+        version: 4.2.1
+      zustand:
+        specifier: ^4.5.7
+        version: 4.5.7(@types/react@18.3.27)(react@18.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.2.43
+        version: 18.3.27
+      '@types/react-dom':
+        specifier: ^18.2.17
+        version: 18.3.7(@types/react@18.3.27)
+      '@vitejs/plugin-react':
+        specifier: ^4.2.1
+        version: 4.7.0(vite@7.3.0)
+      autoprefixer:
+        specifier: ^10.4.16
+        version: 10.4.23(postcss@8.5.6)
+      eslint:
+        specifier: ^8.55.0
+        version: 8.57.1
+      eslint-plugin-react:
+        specifier: ^7.33.2
+        version: 7.37.5(eslint@8.57.1)
+      eslint-plugin-react-hooks:
+        specifier: ^4.6.0
+        version: 4.6.2(eslint@8.57.1)
+      postcss:
+        specifier: ^8.4.32
+        version: 8.5.6
+      tailwindcss:
+        specifier: ^3.4.0
+        version: 3.4.19(tsx@3.14.0)
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      vite:
+        specifier: ^7.1.9
+        version: 7.3.0(@types/node@20.19.27)(tsx@3.14.0)
+
   apps/the-generator:
     dependencies:
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.68.0)
+      '@paypal/react-paypal-js':
+        specifier: ^8.9.2
+        version: 8.9.2(react-dom@18.3.1)(react@18.3.1)
       '@supabase/supabase-js':
         specifier: ^2.75.0
         version: 2.88.0
       '@super-son1k/shared-types':
-        specifier: file:../../packages/shared-types
-        version: file:packages/shared-types
+        specifier: workspace:*
+        version: link:../../packages/shared-types
       '@super-son1k/shared-ui':
-        specifier: file:../../packages/shared-ui
-        version: file:packages/shared-ui(lucide-react@0.545.0)(react-dom@18.3.1)(react@18.3.1)
+        specifier: workspace:*
+        version: link:../../packages/shared-ui
       '@super-son1k/shared-utils':
-        specifier: file:../../packages/shared-utils
-        version: file:packages/shared-utils(typescript@5.9.3)
+        specifier: workspace:*
+        version: link:../../packages/shared-utils
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -295,12 +398,21 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.75.0
         version: 2.88.0
+      '@super-son1k/ghost-studio':
+        specifier: workspace:*
+        version: link:../ghost-studio
+      '@super-son1k/nova-post-pilot':
+        specifier: workspace:*
+        version: link:../nova-post-pilot
       '@super-son1k/shared-ui':
-        specifier: file:../../packages/shared-ui
-        version: file:packages/shared-ui(lucide-react@0.545.0)(react-dom@18.3.1)(react@18.3.1)
+        specifier: workspace:*
+        version: link:../../packages/shared-ui
       '@super-son1k/shared-utils':
-        specifier: file:../../packages/shared-utils
-        version: file:packages/shared-utils(typescript@5.9.3)
+        specifier: workspace:*
+        version: link:../../packages/shared-utils
+      '@super-son1k/the-generator':
+        specifier: workspace:*
+        version: link:../the-generator
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -3516,6 +3628,30 @@ packages:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
     dev: true
+
+  /@paypal/paypal-js@9.2.0:
+    resolution: {integrity: sha512-bYud4/ibSSLsUspruhTrCxuznVY0O23XWwdbI6Wcf45c+1tpYW8BijHJ1/YoWYxslTvJODKHZ8UZWIVkI1pe3g==}
+    dependencies:
+      promise-polyfill: 8.3.0
+    dev: false
+
+  /@paypal/react-paypal-js@8.9.2(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-z1GoA7KAkhFCSmpIsRxe9aseXRvfOMgF6vCJ2Mym0VOSYJm8bZSC3Ui4SjONnglfV8S4P8djpe5QB7FtKsDXrQ==}
+    peerDependencies:
+      react: ^16.8.0 || ^17 || ^18 || ^19
+      react-dom: ^16.8.0 || ^17 || ^18 || ^19
+    dependencies:
+      '@paypal/paypal-js': 9.2.0
+      '@paypal/sdk-constants': 1.0.157
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+    dev: false
+
+  /@paypal/sdk-constants@1.0.157:
+    resolution: {integrity: sha512-BjxWT9rK6dM1AOffSpvHYY47/8BY775jgEYYiwH6eL4YaqU5Epcw7zOtwQ8L4UaEn4FCAjZ2EWxaS83dCN7SpA==}
+    dependencies:
+      hi-base32: 0.5.1
+    dev: false
 
   /@pinojs/redact@0.4.0:
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
@@ -6931,6 +7067,10 @@ packages:
     engines: {node: '>=16.0.0'}
     dev: false
 
+  /hi-base32@0.5.1:
+    resolution: {integrity: sha512-EmBBpvdYh/4XxsnUybsPag6VikPYnN30td+vQk+GI3qpahVEG9+gTkG0aXVxTjBqQ5T6ijbWIu77O+C5WFWsnA==}
+    dev: false
+
   /html-encoding-sniffer@4.0.0:
     resolution: {integrity: sha512-Y22oTqIU4uuPgEemfz7NDJz6OeKf12Lsu+QC+s3BVpda64lTiMYCyGwg5ki4vFxkMwQdeZDl2adZoqUgdFuTgQ==}
     engines: {node: '>=18'}
@@ -6941,6 +7081,12 @@ packages:
   /html-escaper@2.0.2:
     resolution: {integrity: sha512-H2iMtd0I4Mt5eYiapRdIDjp+XzelXQ0tFE4JS7YFwFevXXMmOp9myNrUvCg0D6ws8iqkRPBfKHgbwig1SmlLfg==}
     dev: true
+
+  /html-parse-stringify@3.0.1:
+    resolution: {integrity: sha512-KknJ50kTInJ7qIScF3jeaFRpMpE8/lfiTdzf/twXyPBLAGrLRTmkz3AdTnKeh40X8k9L2fdYwEp/42WGXIRGcg==}
+    dependencies:
+      void-elements: 3.1.0
+    dev: false
 
   /http-proxy-agent@7.0.2:
     resolution: {integrity: sha512-T1gkAiYYDWYx3V5Bmyu7HcfcvL7mUrTWiM6yOfa3PIphViJ/gFPbvidQ+veqSOHci/PxBcDabeUNCzpOODJZig==}
@@ -6969,6 +7115,18 @@ packages:
     resolution: {integrity: sha512-AXcZb6vzzrFAUE61HnN4mpLqd/cSIwNQjtNWR0euPm6y0iqx3G4gOXaIDdtdDwZmhwe82LA6+zinmW4UBWVePQ==}
     engines: {node: '>=16.17.0'}
     dev: true
+
+  /i18next-browser-languagedetector@7.2.2:
+    resolution: {integrity: sha512-6b7r75uIJDWCcCflmbof+sJ94k9UQO4X0YR62oUfqGI/GjCLVzlCwu8TFdRZIqVLzWbzNcmkmhfqKEr4TLz4HQ==}
+    dependencies:
+      '@babel/runtime': 7.28.4
+    dev: false
+
+  /i18next@23.16.8:
+    resolution: {integrity: sha512-06r/TitrM88Mg5FdUXAKL96dJMzgqLE5dv3ryBAra4KCwD9mJ4ndOTS95ZuymIGoE+2hzfdaMak2X11/es7ZWg==}
+    dependencies:
+      '@babel/runtime': 7.28.4
+    dev: false
 
   /iceberg-js@0.8.1:
     resolution: {integrity: sha512-1dhVQZXhcHje7798IVM+xoo/1ZdVfzOMIc8/rgVSijRK38EDqOJoGula9N/8ZI5RD8QTxNQtK/Gozpr+qUqRRA==}
@@ -9200,6 +9358,10 @@ packages:
     engines: {node: '>=0.4.0'}
     dev: false
 
+  /promise-polyfill@8.3.0:
+    resolution: {integrity: sha512-H5oELycFml5yto/atYqmjyigJoAo3+OXwolYiH7OfQuYlAqhxNvTfiNMbV9hsC6Yp83yE5r2KTVmtrG6R9i6Pg==}
+    dev: false
+
   /prompts@2.4.2:
     resolution: {integrity: sha512-NxNv/kLguCA7p3jE8oL2aEBsrJWgAakBpgmgK6lpPWV+WuOmY6r2/zbAVnP+T8bQlA0nzHXSJSJW0Hq7ylaD2Q==}
     engines: {node: '>= 6'}
@@ -9465,6 +9627,26 @@ packages:
     dependencies:
       csstype: 3.2.3
       goober: 2.1.18(csstype@3.2.3)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+    dev: false
+
+  /react-i18next@13.5.0(i18next@23.16.8)(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-CFJ5NDGJ2MUyBohEHxljOq/39NQ972rh1ajnadG9BjTk+UXbHLq4z5DKEbEQBDoIhUmmbuS/fIMJKo6VOax1HA==}
+    peerDependencies:
+      i18next: '>= 23.2.3'
+      react: '>= 16.8.0'
+      react-dom: '*'
+      react-native: '*'
+    peerDependenciesMeta:
+      react-dom:
+        optional: true
+      react-native:
+        optional: true
+    dependencies:
+      '@babel/runtime': 7.28.4
+      html-parse-stringify: 3.0.1
+      i18next: 23.16.8
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
     dev: false
@@ -11243,6 +11425,11 @@ packages:
       - yaml
     dev: true
 
+  /void-elements@3.1.0:
+    resolution: {integrity: sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==}
+    engines: {node: '>=0.10.0'}
+    dev: false
+
   /w3c-xmlserializer@5.0.0:
     resolution: {integrity: sha512-o8qghlI8NZHU1lLPrpi2+Uq7abh4GGPpYANlalzWxyWteJOCsr/P+oPBA49TOLu5FTZO4d3F9MnWJfiMo4BkmA==}
     engines: {node: '>=18'}
@@ -11542,26 +11729,6 @@ packages:
   file:packages/shared-types:
     resolution: {directory: packages/shared-types, type: directory}
     name: '@super-son1k/shared-types'
-    dev: false
-
-  file:packages/shared-ui(lucide-react@0.545.0)(react-dom@18.3.1)(react@18.3.1):
-    resolution: {directory: packages/shared-ui, type: directory}
-    id: file:packages/shared-ui
-    name: '@super-son1k/shared-ui'
-    peerDependencies:
-      lucide-react: ^0.545.0
-      react: ^18.2.0
-    dependencies:
-      '@super-son1k/shared-hooks': file:packages/shared-hooks(react@18.3.1)
-      '@super-son1k/shared-types': file:packages/shared-types
-      lucide-react: 0.545.0(react@18.3.1)
-      react: 18.3.1
-      react-window: 1.8.11(react-dom@18.3.1)(react@18.3.1)
-    transitivePeerDependencies:
-      - bufferutil
-      - react-dom
-      - supports-color
-      - utf-8-validate
     dev: false
 
   file:packages/shared-utils(typescript@5.9.3):

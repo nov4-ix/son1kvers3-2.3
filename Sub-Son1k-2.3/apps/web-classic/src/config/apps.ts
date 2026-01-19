@@ -4,8 +4,7 @@ export const APPS_CONFIG = {
     generatorFull: {
         name: "The Generator",
         path: "/generator",
-        external: true,
-        externalUrl: "https://the-generator.son1kvers3.com",
+        external: false,
         icon: "🎵",
         description: "Generador completo con 6 Perillas Literarias y Lyric Studio",
         category: "primary",
@@ -17,25 +16,23 @@ export const APPS_CONFIG = {
     novaPostPilot: {
         name: "Nova Post Pilot",
         path: "/nova",
-        external: true,
-        externalUrl: "https://nova.son1kvers3.com",
+        external: false,
         icon: "📊",
         description: "Marketing y analytics con IA",
         category: "primary",
         status: "active"
     },
 
-    // Ghost Studio - PRÓXIMAMENTE
+    // Ghost Studio - FUNCIONANDO
     ghostStudio: {
         name: "Ghost Studio",
         path: "/ghost-studio",
-        external: true,
-        externalUrl: "#",
+        external: false,
         icon: "🎛️",
         description: "Mini DAW para covers y edición de audio",
         category: "primary",
-        status: "pending",
-        comingSoon: true
+        status: "active",
+        comingSoon: false
     },
 
     // El Santuario (Live Collaboration) - PRÓXIMAMENTE

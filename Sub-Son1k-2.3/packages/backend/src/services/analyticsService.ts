@@ -7,7 +7,7 @@ import { PrismaClient } from '@prisma/client';
 
 export interface AnalyticsEvent {
   userId: string;
-  event: string;
+  eventType: string;
   properties: Record<string, any>;
   timestamp: Date;
 }
@@ -32,7 +32,7 @@ export interface RequestAnalytics {
 }
 
 export class AnalyticsService {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: PrismaClient) { }
 
   /**
    * Track a custom event
@@ -42,7 +42,7 @@ export class AnalyticsService {
       await this.prisma.analyticsEvent.create({
         data: {
           userId: event.userId,
-          event: event.event,
+          eventType: event.eventType,
           properties: JSON.stringify(event.properties), // Convert to JSON string
           timestamp: event.timestamp
         }
@@ -94,6 +94,18 @@ export class AnalyticsService {
   }
 
   /**
+   * Track subscription changes
+   */
+  async trackSubscriptionChange(userId: string, plan: string, provider: string): Promise<void> {
+    await this.trackEvent({
+      userId,
+      eventType: 'SUBSCRIPTION_CHANGE',
+      properties: { plan, provider },
+      timestamp: new Date()
+    });
+  }
+
+  /**
    * Get user analytics
    */
   async getUserAnalytics(userId: string, period: string = '30d') {
@@ -129,9 +141,10 @@ export class AnalyticsService {
 
       // Process analytics data
       const eventCounts = events.reduce((acc, event) => {
-        acc[event.event] = (acc[event.event] || 0) + 1;
+        acc[event.eventType] = (acc[event.eventType] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
+
 
       const generationStats = {
         total: generations.length,
@@ -143,8 +156,8 @@ export class AnalyticsService {
           acc[gen.quality] = (acc[gen.quality] || 0) + 1;
           return acc;
         }, {} as Record<string, number>),
-        averageDuration: generations.length > 0 
-          ? generations.reduce((sum, gen) => sum + gen.duration, 0) / generations.length 
+        averageDuration: generations.length > 0
+          ? generations.reduce((sum, gen) => sum + gen.duration, 0) / generations.length
           : 0
       };
 
@@ -159,8 +172,8 @@ export class AnalyticsService {
           acc[statusGroup] = (acc[statusGroup] || 0) + 1;
           return acc;
         }, {} as Record<string, number>),
-        averageDuration: requests.length > 0 
-          ? requests.reduce((sum, req) => sum + req.duration, 0) / requests.length 
+        averageDuration: requests.length > 0
+          ? requests.reduce((sum, req) => sum + req.duration, 0) / requests.length
           : 0
       };
 
@@ -212,8 +225,8 @@ export class AnalyticsService {
           acc[gen.quality] = (acc[gen.quality] || 0) + 1;
           return acc;
         }, {} as Record<string, number>),
-        averageDuration: generations.length > 0 
-          ? generations.reduce((sum, gen) => sum + gen.duration, 0) / generations.length 
+        averageDuration: generations.length > 0
+          ? generations.reduce((sum, gen) => sum + gen.duration, 0) / generations.length
           : 0,
         recent: generations.slice(0, 20)
       };
@@ -253,8 +266,8 @@ export class AnalyticsService {
         period,
         totalRequests: tokenUsage.length,
         successfulRequests: tokenUsage.filter(u => u.statusCode >= 200 && u.statusCode < 300).length,
-        averageResponseTime: tokenUsage.length > 0 
-          ? tokenUsage.reduce((sum, u) => sum + u.responseTime, 0) / tokenUsage.length 
+        averageResponseTime: tokenUsage.length > 0
+          ? tokenUsage.reduce((sum, u) => sum + u.responseTime, 0) / tokenUsage.length
           : 0,
         byTier: tokenUsage.reduce((acc, u) => {
           const tier = u.token.tier;
@@ -390,8 +403,8 @@ export class AnalyticsService {
           acc[gen.quality] = (acc[gen.quality] || 0) + 1;
           return acc;
         }, {} as Record<string, number>),
-        averageDuration: generations.length > 0 
-          ? generations.reduce((sum, gen) => sum + gen.duration, 0) / generations.length 
+        averageDuration: generations.length > 0
+          ? generations.reduce((sum, gen) => sum + gen.duration, 0) / generations.length
           : 0
       };
 
@@ -450,12 +463,12 @@ export class AnalyticsService {
         }
       });
 
-      const averageResponseTime = requests.length > 0 
-        ? requests.reduce((sum, req) => sum + req.duration, 0) / requests.length 
+      const averageResponseTime = requests.length > 0
+        ? requests.reduce((sum, req) => sum + req.duration, 0) / requests.length
         : 0;
 
-      const successRate = requests.length > 0 
-        ? (requests.filter(req => req.statusCode >= 200 && req.statusCode < 300).length / requests.length) * 100 
+      const successRate = requests.length > 0
+        ? (requests.filter(req => req.statusCode >= 200 && req.statusCode < 300).length / requests.length) * 100
         : 100;
 
       return {
@@ -520,7 +533,7 @@ export class AnalyticsService {
   async getRecentGenerations(hours: number = 24): Promise<any[]> {
     try {
       const startDate = new Date(Date.now() - hours * 60 * 60 * 1000);
-      
+
       const generations = await this.prisma.generation.findMany({
         where: {
           createdAt: {
@@ -551,7 +564,7 @@ export class AnalyticsService {
   async getActiveUserCount(): Promise<number> {
     try {
       const lastHour = new Date(Date.now() - 60 * 60 * 1000);
-      
+
       return await this.prisma.user.count({
         where: {
           lastLoginAt: { gte: lastHour }
@@ -581,7 +594,7 @@ export class AnalyticsService {
    */
   private getStartDate(period: string): Date {
     const now = new Date();
-    
+
     switch (period) {
       case '1h':
         return new Date(now.getTime() - 60 * 60 * 1000);

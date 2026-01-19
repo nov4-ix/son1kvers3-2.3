@@ -49,7 +49,7 @@ export class TokenPoolService {
   // ========================================
 
   async selectOptimalToken(
-    userTier: 'free' | 'pro' | 'enterprise',
+    userTier: 'free' | 'basic' | 'pro' | 'enterprise',
     userId: string
   ): Promise<TokenSelectionResult> {
     const cacheKey = `optimal-token:${userTier}`;
@@ -112,7 +112,7 @@ export class TokenPoolService {
       } catch (fallbackError) {
         console.error('❌ Fallback a TokenManager también falló:', fallbackError);
       }
-      
+
       // Si todo falla, lanzar error
       throw new Error('No healthy tokens available. Please add tokens to the pool or link a Suno account.');
     }
@@ -141,9 +141,11 @@ export class TokenPoolService {
   private getTierAccess(userTier: string): string[] {
     switch (userTier) {
       case 'enterprise':
-        return ['enterprise', 'pro', 'free'];
+        return ['enterprise', 'pro', 'basic', 'free'];
       case 'pro':
-        return ['pro', 'free'];
+        return ['pro', 'basic', 'free'];
+      case 'basic':
+        return ['basic', 'free'];
       default:
         return ['free'];
     }

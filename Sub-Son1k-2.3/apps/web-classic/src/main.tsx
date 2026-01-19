@@ -9,7 +9,16 @@ import { StripeCheckout, pricingTiers } from './components/StripeCheckout'
 import { TheGeneratorPage } from './components/Generator/TheGeneratorPage'
 import { TheGeneratorExpress } from './components/TheGeneratorExpress'
 import { TransitionOverlay } from './components/TransitionOverlay'
+import { AppNavigation } from './components/AppNavigation'
 import { useSecretKey } from './hooks/useSecretKey'
+import { AuthProvider } from './providers/AuthProvider'
+
+// @ts-ignore
+import { NovaPostPilot } from '@super-son1k/nova-post-pilot'
+import '@super-son1k/nova-post-pilot/src/lib/i18n'
+// @ts-ignore
+import { GhostStudio } from '@super-son1k/ghost-studio'
+import '@super-son1k/ghost-studio/src/styles/ghost.css'
 
 // Main App Component
 function App() {
@@ -35,8 +44,13 @@ function App() {
   return (
     <div className="min-h-screen bg-[#171925] text-white overflow-x-hidden">
       {/* Routes */}
+      <AppNavigation />
+
+      {/* Routes */}
       <Routes>
         <Route path="/generator" element={<TheGeneratorPage />} />
+        <Route path="/nova" element={<NovaPostPilot />} />
+        <Route path="/ghost-studio" element={<GhostStudio />} />
         <Route path="/" element={<TheGeneratorExpress />} />
       </Routes>
 
@@ -77,8 +91,10 @@ function App() {
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 root.render(
   <React.StrictMode>
-    <Router>
-      <App />
-    </Router>
+    <AuthProvider>
+      <Router>
+        <App />
+      </Router>
+    </AuthProvider>
   </React.StrictMode>
 )

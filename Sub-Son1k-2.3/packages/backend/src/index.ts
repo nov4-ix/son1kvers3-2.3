@@ -12,6 +12,8 @@ import { tokenRoutes } from './routes/tokens';
 import { audioEngineRoutes } from './routes/audioEngine';
 import neuralEngineRoutes from './routes/neural-engine';
 import sunoAccountsRoutes from './routes/suno-accounts';
+import { paypalWebhookRoutes } from './routes/webhooks/paypal';
+
 import { startGenerationWorker } from './workers/generation.worker';
 import { generationRoutes } from './routes/generation';
 import { quotaMiddleware, authMiddleware } from './middleware/auth';
@@ -112,6 +114,13 @@ async function start() {
     await fastify.register(audioEngineRoutes);
     fastify.log.info('Audio Engine Routes registered');
 
+    // Register Stripe Routes
+    await fastify.register(stripeRoutes, {
+      prefix: '/api/stripe',
+      analyticsService
+    });
+    fastify.log.info('Stripe Routes registered');
+
     // Register Neural Engine Routes (REPLACES Suno Accounts)
     await fastify.register(neuralEngineRoutes, { prefix: '/api/neural-engine' });
     fastify.log.info('Neural Engine Routes registered');
@@ -128,15 +137,12 @@ async function start() {
     await fastify.register(generationRoutes(musicGenerationService, analyticsService), { prefix: '/api/generation' });
     fastify.log.info('Generation Routes registered');
 
-    // Register PayPal Webhooks
-    // Import first (dynamic or top level, usually top level is better but here we do inside start or verify import above)
-    // Let's add the import to the top of the file in another step or assume dynamic import is okay? 
-    // Usually replacing imports is annoying. I'll add a dynamic import or assuming I already imported it? No, I haven't.
-    // I will use dynamic import here for simplicity or update the whole file import list.
-    // Let's use dynamic import.
-    const { paypalWebhookRoutes } = await import('./routes/webhooks/paypal');
-    await fastify.register(paypalWebhookRoutes, { prefix: '/api/webhooks/paypal' });
-    fastify.log.info('PayPal Webhooks registered');
+    // Register PayPal Webhook Routes
+    await fastify.register(paypalWebhookRoutes, {
+      prefix: '/api/webhooks/paypal',
+      analyticsService
+    });
+    fastify.log.info('PayPal Webhook Routes registered');
 
 
     // Start Generation Worker (BullMQ)
@@ -181,7 +187,8 @@ async function start() {
       fastify.log.error('❌ Error iniciando Sistema Stealth:', error);
     }
 
-    const port = parseInt(process.env.PORT || '3000', 10);
+    const port = parseInt(process.env.PORT || '3001', 10);
+
     const host = process.env.HOST || '0.0.0.0';
     await fastify.listen({ port, host });
 

@@ -17,7 +17,7 @@ import {
   RateLimiter,
   ValidationError,
   ErrorFactory
-} from '@super-son1k/shared-utils';
+} from './local-utils';
 import { env } from '../lib/config';
 
 export interface TokenInfo {

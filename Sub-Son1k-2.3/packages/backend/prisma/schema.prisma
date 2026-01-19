@@ -3,6 +3,8 @@
 
 generator client {
   provider = "prisma-client-js"
+  // Configuración para PgBouncer de Supabase
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {

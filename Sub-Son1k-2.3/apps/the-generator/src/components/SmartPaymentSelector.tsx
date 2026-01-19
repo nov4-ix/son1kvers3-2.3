@@ -167,9 +167,10 @@ const SmartPaymentSelector = () => {
         }
     };
 
-    const handlePayPalApprove = async (data: { subscriptionID: string }) => {
-        console.log('PayPal Subscription Approved:', data);
-        window.location.href = '/dashboard?paypal_success=true&subscription_id=' + data.subscriptionID;
+    const handlePayPalApprove = async (data: any) => {
+        const subscriptionID = data.subscriptionID;
+        console.log('PayPal Subscription Approved:', subscriptionID);
+        window.location.href = '/dashboard?paypal_success=true&subscription_id=' + subscriptionID;
     };
 
     const initialPayPalOptions: ReactPayPalScriptOptions = {

@@ -1,0 +1,56 @@
+import { z } from 'zod'
+
+const envSchema = z.object({
+  // Database
+  DATABASE_URL: z.string().url(),
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
+
+  // APIs
+  SUNO_API_KEY: z.string().min(1),
+  GROQ_API_KEY: z.string().min(1).optional(),
+
+  // Server
+  PORT: z.coerce.number().default(3001),
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+
+  // Auth
+  JWT_SECRET: z.string().min(32),
+
+  // Redis (optional)
+  REDIS_URL: z.string().url().optional(),
+
+  // Frontend
+  FRONTEND_URL: z.string().url().default('http://localhost:3005'),
+
+  // Stripe (optional)
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+})
+
+export type Env = z.infer<typeof envSchema>
+
+let env: Env
+
+export function validateEnv(): Env {
+  try {
+    env = envSchema.parse(process.env)
+    console.log('✅ Environment variables validated successfully')
+    return env
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      console.error('❌ Invalid environment variables:')
+      error.issues.forEach((err) => {
+        console.error(`  - ${err.path.join('.')}: ${err.message}`)
+      })
+    }
+    process.exit(1)
+  }
+}
+
+export function getEnv(): Env {
+  if (!env) {
+    throw new Error('Environment not validated. Call validateEnv() first.')
+  }
+  return env
+}

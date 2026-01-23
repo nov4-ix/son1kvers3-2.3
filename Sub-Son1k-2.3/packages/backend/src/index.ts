@@ -13,15 +13,17 @@ import { audioEngineRoutes } from './routes/audioEngine';
 import neuralEngineRoutes from './routes/neural-engine';
 import sunoAccountsRoutes from './routes/suno-accounts';
 import { paypalWebhookRoutes } from './routes/webhooks/paypal';
+import { globalRateLimit, generationRateLimit, authRateLimit } from './middleware/rateLimiter';
+import { validateEnv, getEnv } from './config/env';
 
-import { startGenerationWorker } from './workers/generation.worker';
-import { generationRoutes } from './routes/generation';
-import { quotaMiddleware, authMiddleware } from './middleware/auth';
-import { AnalyticsService } from './services/analyticsService';
-import { getHarvester } from './services/TokenHarvester';
+// ⚠️ VALIDAR ENV ANTES DE INICIAR
+validateEnv()
+const env = getEnv()
 
 const fastify = Fastify({
-  logger: true,
+  logger: {
+    level: env.NODE_ENV === 'production' ? 'info' : 'debug'
+  }
 });
 
 // Global service instances
@@ -57,10 +59,8 @@ async function registerPlugins() {
     contentSecurityPolicy: false,
   });
 
-  await fastify.register(rateLimit, {
-    max: 100,
-    timeWindow: '1 minute',
-  });
+  // Rate limiting global
+  await fastify.register(rateLimit, globalRateLimit)
 }
 
 // Health check endpoint
@@ -139,9 +139,18 @@ async function start() {
     });
     fastify.log.info('Suno Accounts Routes registered');
 
-    // Register Generation Routes
-    await fastify.register(generationRoutes(musicGenerationService, analyticsService), { prefix: '/api/generation' });
-    fastify.log.info('Generation Routes registered');
+    // Register Generation Routes with specific rate limiting
+    await fastify.register(async (instance) => {
+      // Rate limit específico para generación
+      instance.addHook('preHandler', async (req, reply) => {
+        await instance.rateLimit({
+          ...generationRateLimit
+        })(req, reply)
+      })
+
+      await instance.register(generationRoutes(musicGenerationService, analyticsService))
+    }, { prefix: '/api/generation' })
+    fastify.log.info('Generation Routes registered with rate limiting')
 
     // Register PayPal Webhook Routes
     await fastify.register(paypalWebhookRoutes, {
@@ -193,7 +202,7 @@ async function start() {
       fastify.log.error('❌ Error iniciando Sistema Stealth:', error);
     }
 
-    const port = parseInt(process.env.PORT || '3001', 10);
+    const port = env.PORT;
 
     const host = process.env.HOST || '0.0.0.0';
     await fastify.listen({ port, host });

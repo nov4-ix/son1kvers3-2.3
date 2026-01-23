@@ -1,9 +1,9 @@
 {
   "framework": null,
-  "buildCommand": "pnpm build --filter=@super-son1k/web-classic",
-  "outputDirectory": "apps/web-classic/dist",
+  "buildCommand": "pnpm build --filter=@super-son1k/the-generator",
+  "outputDirectory": "apps/the-generator/dist",
   "installCommand": "pnpm install --frozen-lockfile",
-  "devCommand": "pnpm dev --filter=@super-son1k/web-classic",
+  "devCommand": "pnpm dev --filter=@super-son1k/the-generator",
   "env": {
     "VITE_BACKEND_URL": "@vite_backend_url",
     "VITE_SUPABASE_URL": "@vite_supabase_url",

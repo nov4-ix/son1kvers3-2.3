@@ -15,15 +15,15 @@ import sunoAccountsRoutes from './routes/suno-accounts';
 import { paypalWebhookRoutes } from './routes/webhooks/paypal';
 import { globalRateLimit, generationRateLimit, authRateLimit } from './middleware/rateLimiter';
 import { validateEnv, getEnv } from './config/env';
+import { healthRoutes } from './routes/health';
+import { logger } from './config/logger';
 
 // ⚠️ VALIDAR ENV ANTES DE INICIAR
 validateEnv()
 const env = getEnv()
 
 const fastify = Fastify({
-  logger: {
-    level: env.NODE_ENV === 'production' ? 'info' : 'debug'
-  }
+  logger: logger
 });
 
 // Global service instances
@@ -159,6 +159,9 @@ async function start() {
     });
     fastify.log.info('PayPal Webhook Routes registered');
 
+    // Register Health Check Routes
+    await fastify.register(healthRoutes);
+    fastify.log.info('Health Check Routes registered');
 
     // Start Generation Worker (BullMQ)
     try {

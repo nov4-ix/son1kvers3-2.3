@@ -338,7 +338,7 @@ Genera SOLO el prompt musical, sin explicaciones adicionales.`
 
     try {
       // ✅ CONECTAR AL BACKEND PROPIO (igual que The Generator Next.js)
-      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://son1kverse-backend.railway.app'
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
       const BACKEND_SECRET = import.meta.env.VITE_BACKEND_SECRET || 'dev-token'
 
       // Preparar prompt completo (igual que Next.js)
@@ -397,7 +397,7 @@ Genera SOLO el prompt musical, sin explicaciones adicionales.`
 
   // ✅ Función de polling (igual que Next.js)
   const pollTrackStatus = async (trackId: string, generationId?: string) => {
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://son1kverse-backend.railway.app'
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
     const BACKEND_SECRET = import.meta.env.VITE_BACKEND_SECRET || 'dev-token'
 
     const maxAttempts = 60 // 5 minutos máximo (5s * 60)

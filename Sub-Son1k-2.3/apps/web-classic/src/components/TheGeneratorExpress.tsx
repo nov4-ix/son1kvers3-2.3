@@ -34,7 +34,7 @@ export const TheGeneratorExpress = () => {
 
     const fetchCredits = async (uid: string) => {
         try {
-            const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://sub-son1k-2-2.fly.dev';
+            const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
             const res = await fetch(`${BACKEND_URL}/api/credits/${uid}`);
             const data = await res.json();
             if (data.success && data.credits) {
@@ -59,7 +59,7 @@ export const TheGeneratorExpress = () => {
         setIsPlaying(false);
 
         try {
-            const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://sub-son1k-2-2.fly.dev';
+            const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
             // Construct prompt with voice type if selected
             let finalPrompt = prompt;

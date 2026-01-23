@@ -16,11 +16,12 @@ import {
   Heart,
   User,
   LogOut,
-  History
+  History,
+  Sparkles
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import type { MusicTrack } from '@super-son1k/shared-types'
+import type { MusicTrack } from '../types/music'
 import { useAuth } from '../providers/AuthProvider'
 import { AuthModal } from '../components/AuthModal'
 import { NeuralEngineConnect } from '../components/NeuralEngineConnect'
@@ -28,38 +29,19 @@ import { translateToEnglish } from '../lib/translate'
 import GenerationHistory from '../components/GenerationHistory'
 import { config } from '../lib/config/env'
 import { useAudioStore } from '../store/audioStore'
+import { Logo } from '@super-son1k/shared-ui'
 
 const generationSchema = z.object({
-  prompt: z.string().min(1, 'Prompt is required').max(1000, 'Prompt too long'),
-  duration: z.number().min(30).max(600).optional(),
-  tempo: z.number().min(60).max(200).optional(),
-  key: z.string().optional(),
-  genre: z.string().optional(),
-  mood: z.string().optional(),
-  style: z.string().optional(),
-  complexity: z.number().min(0).max(1).optional(),
+  prompt: z.string().min(1, 'Prompt is required').max(2000, 'Prompt too long'),
+  lyrics: z.string().optional(),
+  isInstrumental: z.boolean().optional(),
+  creativeIntensity: z.number().min(0).max(1).optional(),
+  emotionalDepth: z.number().min(0).max(1).optional(),
+  experimentalLevel: z.number().min(0).max(1).optional(),
+  narrativeStyle: z.number().min(0).max(1).optional(),
 })
 
 type GenerationForm = z.infer<typeof generationSchema>
-
-const genres = [
-  'pop', 'rock', 'electronic', 'classical', 'jazz', 'hip-hop', 'ambient',
-  'country', 'blues', 'folk', 'reggae', 'funk', 'soul', 'r&b'
-]
-
-const moods = [
-  'happy', 'sad', 'energetic', 'calm', 'aggressive', 'peaceful', 'romantic',
-  'melancholic', 'uplifting', 'dark', 'bright', 'mysterious', 'nostalgic'
-]
-
-const keys = [
-  'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'
-]
-
-const styles = [
-  'modern', 'classical', 'electronic', 'acoustic', 'orchestral', 'minimalist',
-  'maximalist', 'ambient', 'cinematic', 'experimental', 'fusion'
-]
 
 export function TheGenerator() {
   const { user, userTier, session, isAuthenticated, isLoading, signOut, showAuthModal, setShowAuthModal } = useAuth()
@@ -68,6 +50,7 @@ export function TheGenerator() {
   const [error, setError] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
   const [pollingInterval, setPollingInterval] = useState<ReturnType<typeof setInterval> | null>(null)
+  const [lyrics, setLyrics] = useState<string>('')
 
   // Use global audio store to prevent multiple audios playing
   const { currentTrackId, isPlaying, play, pause } = useAudioStore()
@@ -81,15 +64,71 @@ export function TheGenerator() {
   } = useForm<GenerationForm>({
     resolver: zodResolver(generationSchema),
     defaultValues: {
-      duration: 60,
-      tempo: 120,
-      key: 'C',
-      genre: 'pop',
-      mood: 'happy',
-      style: 'modern',
-      complexity: 0.7
+      prompt: '',
+      lyrics: '',
+      isInstrumental: false,
+      creativeIntensity: 0.7,
+      emotionalDepth: 0.6,
+      experimentalLevel: 0.4,
+      narrativeStyle: 0.5
     }
   })
+
+  const generateLyrics = async () => {
+    const prompt = watch('prompt')
+    if (!prompt.trim()) {
+      toast.error('Escribe un prompt musical primero')
+      return
+    }
+
+    try {
+      const backendUrl = config.backendUrl
+      const response = await fetch(`${backendUrl}/api/lyrics/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        },
+        body: JSON.stringify({
+          prompt,
+          style: 'creative',
+          length: 'medium'
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const generatedLyrics = data.lyrics || data.text || 'Letras generadas automáticamente...'
+        setValue('lyrics', generatedLyrics)
+        setLyrics(generatedLyrics)
+        toast.success('Letras generadas automáticamente!')
+      } else {
+        toast.error('Error generando letras')
+      }
+    } catch (error) {
+      toast.error('Error de conexión')
+      console.error(error)
+    }
+  }
+
+  const generateCreativePrompt = () => {
+    const creativePrompts = [
+      "Crea una sinfonía que narre el viaje de una estrella fugaz a través del cosmos infinito",
+      "Una melodía que capture la esencia de un bosque encantado al atardecer",
+      "Sonidos que representan la evolución de una mariposa desde oruga hasta vuelo majestuoso",
+      "Ritmos que expresan la tensión y liberación de una tormenta eléctrica",
+      "Música que describe el primer encuentro entre dos almas gemelas en un universo paralelo",
+      "Una composición que evoca el misterio de antiguas ruinas olvidadas por el tiempo",
+      "Sonidos que pintan el paisaje sonoro de una ciudad futurista bajo la lluvia",
+      "Melodías que cuentan la historia de un inventor loco creando vida artificial",
+      "Ritmos que expresan la danza caótica de partículas subatómicas",
+      "Música que captura la serenidad de un océano profundo en calma absoluta"
+    ]
+
+    const randomPrompt = creativePrompts[Math.floor(Math.random() * creativePrompts.length)]
+    setValue('prompt', randomPrompt)
+    toast.success('Prompt creativo generado!')
+  }
 
   const onSubmit = async (data: GenerationForm) => {
     // Validate authentication
@@ -116,8 +155,10 @@ export function TheGenerator() {
         },
         body: JSON.stringify({
           prompt: translatedPrompt,
-          style: data.style || 'pop',
-          duration: data.duration || 60,
+          creativeIntensity: data.creativeIntensity || 0.7,
+          emotionalDepth: data.emotionalDepth || 0.6,
+          experimentalLevel: data.experimentalLevel || 0.4,
+          narrativeStyle: data.narrativeStyle || 0.5,
           quality: 'standard'
         })
       })
@@ -137,12 +178,12 @@ export function TheGenerator() {
         id: result.data.generationId,
         prompt: data.prompt,
         audioUrl: result.data.audioUrl || '',
-        duration: data.duration || 60,
+        duration: 60, // Default duration
         status: result.data.status || 'pending',
         createdAt: new Date().toISOString(),
         generationId: result.data.generationId,
         taskId: result.data.generationTaskId || result.data.taskId,
-        style: data.style
+        style: 'creative' // Creative style
       }
 
       setGeneratedTrack(track)
@@ -310,13 +351,17 @@ export function TheGenerator() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex-1"></div>
             <div className="flex-1">
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-[#00bfff] via-[#ff49c3] to-[#44ff44] bg-clip-text text-transparent flex items-center justify-center gap-3">
-                <Wand2 size={40} className="text-[#00bfff]" />
-                THE GENERATOR
-              </h1>
-              <p className="text-[#b9b9c2] text-lg mt-2">
-                Creating AI-powered music with advanced controls
-              </p>
+              <div className="flex items-center justify-center">
+                <Logo size={50} showText={false} />
+                <div className="ml-4">
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-[#00bfff] via-[#ff49c3] to-[#44ff44] bg-clip-text text-transparent">
+                    THE GENERATOR
+                  </h1>
+                  <p className="text-[#b9b9c2] text-sm mt-1">
+                    AI-Powered Creative Music Generation
+                  </p>
+                </div>
+              </div>
             </div>
             <div className="flex-1 flex justify-end items-center gap-2">
               <Link to="/pricing" className="mr-2 text-[#00bfff] hover:text-white transition-colors font-semibold">
@@ -387,158 +432,194 @@ export function TheGenerator() {
               GENERATION PARAMETERS
             </h2>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              {/* Prompt */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Prompt *
-                </label>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {/* Prompt Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="block text-lg font-medium text-gray-200">
+                    Prompt Musical Creativo
+                  </label>
+                  <div className="flex gap-2">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      type="button"
+                      onClick={generateCreativePrompt}
+                      className="px-4 py-2 bg-[#00bfff]/20 border border-[#00bfff]/50 rounded-lg text-[#00bfff] hover:bg-[#00bfff]/30 transition-all text-sm font-medium flex items-center gap-2"
+                    >
+                      <Wand2 size={16} />
+                      Prompt Creativo
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      type="button"
+                      onClick={generateLyrics}
+                      className="px-4 py-2 bg-[#ff49c3]/20 border border-[#ff49c3]/50 rounded-lg text-[#ff49c3] hover:bg-[#ff49c3]/30 transition-all text-sm font-medium flex items-center gap-2"
+                    >
+                      <Music size={16} />
+                      Generar Letra
+                    </motion.button>
+                  </div>
+                </div>
+
                 <textarea
                   {...register('prompt')}
-                  className="w-full h-32 px-4 py-3 bg-[#0b0b0d] border-2 border-[#1b1b21] rounded-lg text-[#e7e7ea] placeholder-[#7a8a9a] focus:outline-none focus:border-[#00bfff] focus:ring-2 focus:ring-[#00bfff]/50 resize-none transition-all"
-                  placeholder="Describe the music you want to create..."
+                  className="w-full h-40 px-6 py-4 bg-[#0b0b0d] border-2 border-[#1b1b21] rounded-xl text-[#e7e7ea] placeholder-[#7a8a9a] focus:outline-none focus:border-[#00bfff] focus:ring-2 focus:ring-[#00bfff]/50 resize-none transition-all text-lg leading-relaxed"
+                  placeholder="Describe tu visión musical... Sé tan creativo como quieras. No hay límites de género, tempo o estilo. Crea sonidos que pinten emociones, cuenten historias, o expresen ideas abstractas..."
                 />
                 {errors.prompt && (
                   <p className="text-red-400 text-sm mt-1">{errors.prompt.message}</p>
                 )}
               </div>
 
-              {/* Duration and Tempo */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Duration (seconds)
-                  </label>
-                  <input
-                    type="number"
-                    {...register('duration', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 bg-[#333] border border-[#555] rounded-lg text-white focus:outline-none focus:border-[#00FFE7] focus:ring-1 focus:ring-[#00FFE7]"
-                    min="30"
-                    max="600"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Tempo (BPM)
-                  </label>
-                  <input
-                    type="number"
-                    {...register('tempo', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 bg-[#333] border border-[#555] rounded-lg text-white focus:outline-none focus:border-[#00FFE7] focus:ring-1 focus:ring-[#00FFE7]"
-                    min="60"
-                    max="200"
-                  />
+              {/* Lyrics Display */}
+              {lyrics && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-[#0f121a] border border-[#ff49c3]/30 rounded-lg p-4"
+                >
+                  <h3 className="text-[#ff49c3] font-medium mb-2">Letras Generadas:</h3>
+                  <p className="text-gray-300 text-sm whitespace-pre-line">{lyrics}</p>
+                </motion.div>
+              )}
+
+              {/* Perillas Literarias */}
+              <div className="space-y-6">
+                <h3 className="text-lg font-medium text-gray-200 border-b border-[#00bfff]/30 pb-2">
+                  🎛️ Perillas Literarias
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Intensidad Creativa */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="text-sm font-medium text-gray-300">
+                        Intensidad Creativa
+                      </label>
+                      <span className="text-[#00bfff] font-mono text-sm">
+                        {(watch('creativeIntensity') || 0.7).toFixed(1)}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      {...register('creativeIntensity', { valueAsNumber: true })}
+                      className="w-full h-3 bg-[#333] rounded-lg appearance-none cursor-pointer slider accent-[#00bfff]"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Baja: Tradicional • Alta: Experimental
+                    </p>
+                  </div>
+
+                  {/* Profundidad Emocional */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="text-sm font-medium text-gray-300">
+                        Profundidad Emocional
+                      </label>
+                      <span className="text-[#ff49c3] font-mono text-sm">
+                        {(watch('emotionalDepth') || 0.6).toFixed(1)}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      {...register('emotionalDepth', { valueAsNumber: true })}
+                      className="w-full h-3 bg-[#333] rounded-lg appearance-none cursor-pointer slider accent-[#ff49c3]"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Baja: Superficial • Alta: Profunda
+                    </p>
+                  </div>
+
+                  {/* Nivel Experimental */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="text-sm font-medium text-gray-300">
+                        Nivel Experimental
+                      </label>
+                      <span className="text-[#44ff44] font-mono text-sm">
+                        {(watch('experimentalLevel') || 0.4).toFixed(1)}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      {...register('experimentalLevel', { valueAsNumber: true })}
+                      className="w-full h-3 bg-[#333] rounded-lg appearance-none cursor-pointer slider accent-[#44ff44]"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Baja: Convencional • Alta: Avant-garde
+                    </p>
+                  </div>
+
+                  {/* Estilo Narrativo */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <label className="text-sm font-medium text-gray-300">
+                        Estilo Narrativo
+                      </label>
+                      <span className="text-[#ffff44] font-mono text-sm">
+                        {(watch('narrativeStyle') || 0.5).toFixed(1)}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      {...register('narrativeStyle', { valueAsNumber: true })}
+                      className="w-full h-3 bg-[#333] rounded-lg appearance-none cursor-pointer slider accent-[#ffff44]"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Baja: Abstracto • Alta: Cinematográfico
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {/* Genre and Mood */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Genre
-                  </label>
-                  <select
-                    {...register('genre')}
-                    className="w-full px-3 py-2 bg-[#333] border border-[#555] rounded-lg text-white focus:outline-none focus:border-[#00FFE7] focus:ring-1 focus:ring-[#00FFE7]"
-                  >
-                    {genres.map(genre => (
-                      <option key={genre} value={genre}>
-                        {genre.charAt(0).toUpperCase() + genre.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Mood
-                  </label>
-                  <select
-                    {...register('mood')}
-                    className="w-full px-3 py-2 bg-[#333] border border-[#555] rounded-lg text-white focus:outline-none focus:border-[#00FFE7] focus:ring-1 focus:ring-[#00FFE7]"
-                  >
-                    {moods.map(mood => (
-                      <option key={mood} value={mood}>
-                        {mood.charAt(0).toUpperCase() + mood.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Key and Style */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Key
-                  </label>
-                  <select
-                    {...register('key')}
-                    className="w-full px-3 py-2 bg-[#333] border border-[#555] rounded-lg text-white focus:outline-none focus:border-[#00FFE7] focus:ring-1 focus:ring-[#00FFE7]"
-                  >
-                    {keys.map(key => (
-                      <option key={key} value={key}>{key}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Style
-                  </label>
-                  <select
-                    {...register('style')}
-                    className="w-full px-3 py-2 bg-[#333] border border-[#555] rounded-lg text-white focus:outline-none focus:border-[#00FFE7] focus:ring-1 focus:ring-[#00FFE7]"
-                  >
-                    {styles.map(style => (
-                      <option key={style} value={style}>
-                        {style.charAt(0).toUpperCase() + style.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Complexity */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Complexity: {watch('complexity') || 0.7}
-                </label>
-                <input
-                  type="range"
-                  {...register('complexity', { valueAsNumber: true })}
-                  className="w-full h-2 bg-[#333] rounded-lg appearance-none cursor-pointer slider"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                />
-              </div>
-
-              {/* Generate Button */}
               {/* Error Display */}
               {error && (
-                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-400 text-sm">
                   {error}
                 </div>
               )}
 
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                type="submit"
-                disabled={isGenerating}
-                className="w-full bg-gradient-to-r from-[#00bfff] to-[#ff49c3] text-white font-bold py-4 px-6 rounded-lg hover:from-[#00a8e6] hover:to-[#ff3dba] transition-all transform hover:scale-105 shadow-lg shadow-[#00bfff]/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isGenerating ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Music size={20} />
-                    Generate Music
-                  </>
-                )}
-              </motion.button>
+              {/* Generate Button */}
+              <div className="pt-4">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  type="submit"
+                  disabled={isGenerating}
+                  className="w-full bg-gradient-to-r from-[#00bfff] via-[#ff49c3] to-[#44ff44] text-white font-bold py-5 px-8 rounded-xl hover:from-[#00a8e6] hover:via-[#ff3dba] hover:to-[#22dd22] transition-all transform hover:scale-105 shadow-2xl shadow-[#00bfff]/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-lg"
+                >
+                  {isGenerating ? (
+                    <>
+                      <div className="w-5 h-5 border-3 border-black border-t-transparent rounded-full animate-spin" />
+                      <span>Creando tu música...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={24} />
+                      <span>Generar Música Creativa</span>
+                      <Sparkles size={24} />
+                    </>
+                  )}
+                </motion.button>
+
+                <p className="text-center text-gray-500 text-sm mt-3">
+                  Tu visión musical se convertirá en realidad con IA avanzada
+                </p>
+              </div>
             </form>
           </motion.div>
 
@@ -559,22 +640,22 @@ export function TheGenerator() {
                   <Music size={48} className="text-gray-400" />
                 </div>
 
-                {/* Track Info */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">
-                    {generatedTrack.prompt}
-                  </h3>
-                  <div className="flex items-center gap-4 text-sm text-gray-400">
-                    <div className="flex items-center gap-1">
-                      <Clock size={14} />
-                      {generatedTrack.duration}s
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Volume2 size={14} />
-                      {watch('tempo')} BPM
-                    </div>
-                  </div>
-                </div>
+                 {/* Track Info */}
+                 <div>
+                   <h3 className="text-lg font-semibold mb-2">
+                     {generatedTrack.prompt}
+                   </h3>
+                   <div className="flex items-center gap-4 text-sm text-gray-400">
+                     <div className="flex items-center gap-1">
+                       <Wand2 size={14} />
+                       Creatividad: {((generatedTrack as any).creativeIntensity || 0.7).toFixed(1)}
+                     </div>
+                     <div className="flex items-center gap-1">
+                       <Heart size={14} />
+                       Emoción: {((generatedTrack as any).emotionalDepth || 0.6).toFixed(1)}
+                     </div>
+                   </div>
+                 </div>
 
                 {/* Controls */}
                 <div className="flex items-center gap-2">

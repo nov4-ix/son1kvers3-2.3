@@ -181,16 +181,9 @@ export async function stripeRoutes(fastify: FastifyInstance, options: { analytic
         data: {
           sessionId: session.id,
           url: session.url
-        }
-      }
-    } catch (error) {
-      console.error('Stripe checkout error:', error)
-      return reply.code(400).send({
-        success: false,
-        error: {
-          code: 'CHECKOUT_FAILED',
-          message: 'Failed to create checkout session'
-        }
+    }
+  }
+}
       })
     }
   })

@@ -35,16 +35,22 @@ let analyticsService: AnalyticsService;
 async function registerPlugins() {
   await fastify.register(cors, {
     origin: [
-      /^https:\/\/.*\.vercel\.app$/,
+      /^https:\/\/.*\.vercel\.app$/,  // Todos los subdominios de Vercel
+      /^https:\/\/.*\.son1kvers3\.com$/,  // Dominios de Son1k
       'https://www.son1kvers3.com',
       'https://ghost-studio-lovat.vercel.app',
+      'https://web-classic-son1kvers3s-projects-c3cdfb54.vercel.app', // Frontend actual
       'http://localhost:5173',
       'http://localhost:5174',
       'http://localhost:3000',
+      'http://localhost:3001',  // Backend local
+      'http://localhost:3004',
+      'http://localhost:3005',
       'http://localhost:4173',
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   });
 
   await fastify.register(helmet, {
@@ -115,10 +121,10 @@ async function start() {
     fastify.log.info('Audio Engine Routes registered');
 
     // Register Stripe Routes
-    await fastify.register(stripeRoutes, {
-      prefix: '/api/stripe',
-      analyticsService
-    });
+    // await fastify.register(stripeRoutes, {
+    //   prefix: '/api/stripe',
+    //   analyticsService
+    // });
     fastify.log.info('Stripe Routes registered');
 
     // Register Neural Engine Routes (REPLACES Suno Accounts)

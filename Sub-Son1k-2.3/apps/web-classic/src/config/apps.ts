@@ -1,5 +1,19 @@
+// Tipos para configuración de apps
+export interface AppConfig {
+    name: string;
+    path: string;
+    external?: boolean;
+    externalUrl?: string;
+    icon: string;
+    description: string;
+    category: string;
+    status: string;
+    features?: string[];
+    comingSoon?: boolean;
+}
+
 // Configuración de Apps - Ecosistema Son1kVers3
-export const APPS_CONFIG = {
+export const APPS_CONFIG: Record<string, AppConfig> = {
     // The Generator (Completo) - FUNCIONANDO
     generatorFull: {
         name: "The Generator",
@@ -20,7 +34,8 @@ export const APPS_CONFIG = {
         icon: "📊",
         description: "Marketing y analytics con IA",
         category: "primary",
-        status: "active"
+        status: "active",
+        features: ["Viral Hooks", "Content Calendar", "Impact Metrics"]
     },
 
     // Ghost Studio - FUNCIONANDO
@@ -32,6 +47,7 @@ export const APPS_CONFIG = {
         description: "Mini DAW para covers y edición de audio",
         category: "primary",
         status: "active",
+        features: ["Multi-track editing", "AI Enhancement", "Cloud Sync"],
         comingSoon: false
     },
 
@@ -45,6 +61,7 @@ export const APPS_CONFIG = {
         description: "Colaboraciones y chat en tiempo real",
         category: "social",
         status: "development",
+        features: ["Live Collaboration", "Real-time Chat", "Project Sharing"],
         comingSoon: true
     }
 };

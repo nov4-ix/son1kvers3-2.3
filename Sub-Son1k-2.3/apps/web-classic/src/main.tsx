@@ -10,6 +10,7 @@ import { TheGeneratorPage } from './components/Generator/TheGeneratorPage'
 import { TheGeneratorExpress } from './components/TheGeneratorExpress'
 import { TransitionOverlay } from './components/TransitionOverlay'
 import { AppNavigation } from './components/AppNavigation'
+import Dashboard from './pages/Dashboard'
 import { useSecretKey } from './hooks/useSecretKey'
 import { AuthProvider } from './providers/AuthProvider'
 
@@ -48,10 +49,10 @@ function App() {
 
       {/* Routes */}
       <Routes>
+        <Route path="/" element={<Dashboard />} />
         <Route path="/generator" element={<TheGeneratorPage />} />
         <Route path="/nova" element={<NovaPostPilot />} />
         <Route path="/ghost-studio" element={<GhostStudio />} />
-        <Route path="/" element={<TheGeneratorExpress />} />
       </Routes>
 
       {/* Pixel Chat Floating Interface */}

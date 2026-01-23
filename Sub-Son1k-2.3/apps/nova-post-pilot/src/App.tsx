@@ -28,6 +28,7 @@ import { useContentGeneration } from './hooks/useContentGeneration'
 import { ViralSuggestionsPanel } from './components/ViralSuggestionsPanel'
 import { ContentCalendar } from './components/ContentCalendar'
 import { ImpactMetricsPanel } from './components/ImpactMetricsPanel'
+import { Logo } from '@super-son1k/shared-ui'
 
 // Mock Premium Paywall component (TODO: move to shared-ui)
 function PremiumPaywall({ feature, description, currentTier, requiredTier }: {
@@ -203,13 +204,17 @@ export function NovaPostPilot() {
           className="flex items-center justify-between mb-8"
         >
           <div>
-            <h1 className="text-4xl font-bold text-[#00FFE7] mb-2 flex items-center gap-2">
-              <Zap size={32} />
-              Nova Post Pilot
-            </h1>
-            <p className="text-gray-400">
-              {t('growth.hooksSubtitle')} & AI Content Strategy
-            </p>
+            <div className="flex items-center gap-4 mb-2">
+              <Logo size={45} showText={false} />
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-[#00bfff] to-[#ff49c3] bg-clip-text text-transparent">
+                  Nova Post Pilot
+                </h1>
+                <p className="text-sm text-gray-400">
+                  Marketing Intelligence & AI Content Strategy
+                </p>
+              </div>
+            </div>
           </div>
           <div className="flex gap-4">
             <div className="text-right">

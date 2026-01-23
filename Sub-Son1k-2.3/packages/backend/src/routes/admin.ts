@@ -282,6 +282,164 @@ export function adminRoutes(
         });
       }
     });
+
+    // TEMPORAL: Crear usuario administrador
+    fastify.post('/create-admin-user', async (request, reply) => {
+      try {
+        const adminEmail = 'nov4-ix@son1kvers3.com'
+        const adminUserId = 'admin-nov4-ix-son1kvers3'
+
+        console.log('🚀 Creando usuario administrador desde API...')
+
+        // 1. Crear usuario en Prisma
+        const user = await fastify.prisma.user.upsert({
+          where: { email: adminEmail },
+          update: {
+            isAdmin: true,
+            alvaeEnabled: true,
+            tier: 'ENTERPRISE',
+            username: 'nov4-ix',
+            metadata: {
+              symbol: 'ALVAE',
+              role: 'administrator',
+              created_by_system: true,
+              admin_override: true
+            }
+          },
+          create: {
+            id: adminUserId,
+            email: adminEmail,
+            username: 'nov4-ix',
+            tier: 'ENTERPRISE',
+            isAdmin: true,
+            alvaeEnabled: true,
+            metadata: {
+              symbol: 'ALVAE',
+              role: 'administrator',
+              created_by_system: true,
+              admin_override: true
+            }
+          }
+        })
+
+        console.log('✅ Usuario creado en Prisma:', user.id)
+
+        // 2. Crear UserTier
+        const userTier = await fastify.prisma.userTier.upsert({
+          where: { userId: user.id },
+          update: {
+            tier: 'ENTERPRISE',
+            monthlyGenerations: 999999,
+            dailyGenerations: 999999,
+            usedThisMonth: 0,
+            usedToday: 0,
+            maxDuration: 600,
+            quality: 'premium',
+            features: 'unlimited_generation,premium_quality,alvae_system,admin_tools,all_extensions,instant_generation,priority_queue,advanced_analytics,collaboration_tools,nft_creation,commercial_license,god_mode'
+          },
+          create: {
+            userId: user.id,
+            tier: 'ENTERPRISE',
+            monthlyGenerations: 999999,
+            dailyGenerations: 999999,
+            maxDuration: 600,
+            quality: 'premium',
+            features: 'unlimited_generation,premium_quality,alvae_system,admin_tools,all_extensions,instant_generation,priority_queue,advanced_analytics,collaboration_tools,nft_creation,commercial_license,god_mode'
+          }
+        })
+
+        // 3. Crear UserCredits
+        const userCredits = await fastify.prisma.userCredits.upsert({
+          where: { userId: user.id },
+          update: {
+            totalCredits: 999999999,
+            usedCredits: 0,
+            bonusCredits: 999999999
+          },
+          create: {
+            userId: user.id,
+            totalCredits: 999999999,
+            usedCredits: 0,
+            bonusCredits: 999999999
+          }
+        })
+
+        // 4. Crear UserExtension con ALVAE MASTER
+        const userExtension = await fastify.prisma.userExtension.upsert({
+          where: { userId: user.id },
+          update: {
+            alvaeEnabled: true,
+            alvaeLevel: 'MASTER',
+            extensionVersion: '2.2',
+            features: 'full_access,admin_override,debug_mode,advanced_controls,god_mode,unlimited_power'
+          },
+          create: {
+            userId: user.id,
+            alvaeEnabled: true,
+            alvaeLevel: 'MASTER',
+            extensionVersion: '2.2',
+            features: 'full_access,admin_override,debug_mode,advanced_controls,god_mode,unlimited_power'
+          }
+        })
+
+        // 5. Crear suscripción ENTERPRISE
+        const subscription = await fastify.prisma.subscription.upsert({
+          where: {
+            userId_plan: {
+              userId: user.id,
+              plan: 'ENTERPRISE'
+            }
+          },
+          update: {
+            status: 'ACTIVE',
+            metadata: {
+              admin_override: true,
+              unlimited: true,
+              alvae_symbol: 'ALVAE',
+              god_mode: true
+            }
+          },
+          create: {
+            userId: user.id,
+            plan: 'ENTERPRISE',
+            status: 'ACTIVE',
+            paymentProvider: 'SYSTEM',
+            metadata: {
+              admin_override: true,
+              unlimited: true,
+              alvae_symbol: 'ALVAE',
+              god_mode: true,
+              created_by_system: true
+            }
+          }
+        })
+
+        return reply.send({
+          success: true,
+          message: 'Usuario administrador creado exitosamente',
+          user: {
+            id: user.id,
+            email: user.email,
+            tier: user.tier,
+            isAdmin: user.isAdmin,
+            alvaeEnabled: user.alvaeEnabled,
+            symbol: 'ALVAE'
+          },
+          credentials: {
+            email: 'nov4-ix@son1kvers3.com',
+            password: 'iloveMusic!90'
+          }
+        })
+
+      } catch (error) {
+        console.error('❌ Error creando usuario administrador:', error)
+        return reply.code(500).send({
+          success: false,
+          error: 'Error creando usuario administrador',
+          details: error.message
+        })
+      }
+    });
   };
 }
 

@@ -261,7 +261,7 @@ export function generationRoutes(musicGenerationService: MusicGenerationService,
         // Check status with generation API if still pending or processing
         if (generation.status === 'PENDING' || generation.status === 'PROCESSING') {
           if (generation.generationTaskId) {
-            const status = await musicGenerationService.checkGenerationStatus(generation.generationTaskId);
+            const status = await musicGenerationService.checkGenerationStatus(generation.generationTaskId, generation.id);
 
             // ✅ NORMALIZED RESPONSE: Convertir status del servicio a formato normalizado
             // El servicio retorna: 'pending' | 'processing' | 'completed' | 'failed'

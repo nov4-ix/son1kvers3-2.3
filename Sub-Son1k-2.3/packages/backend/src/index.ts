@@ -16,11 +16,14 @@ import { paypalWebhookRoutes } from './routes/webhooks/paypal';
 import { globalRateLimit, generationRateLimit, authRateLimit } from './middleware/rateLimiter';
 import { validateEnv, getEnv } from './config/env';
 import { healthRoutes } from './routes/health';
-import { logger } from './config/logger';
+import { setupWebSocket } from './websocket/generationSocket';
 
 // ⚠️ VALIDAR ENV ANTES DE INICIAR
 validateEnv()
 const env = getEnv()
+
+// Import logger after env validation
+import { logger } from './config/logger'
 
 const fastify = Fastify({
   logger: logger
@@ -61,6 +64,9 @@ async function registerPlugins() {
 
   // Rate limiting global
   await fastify.register(rateLimit, globalRateLimit)
+
+  // Setup WebSocket para updates en tiempo real
+  await setupWebSocket(fastify)
 }
 
 // Health check endpoint

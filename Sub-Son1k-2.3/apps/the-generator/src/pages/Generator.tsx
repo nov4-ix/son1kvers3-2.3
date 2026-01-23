@@ -23,6 +23,7 @@ import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import type { MusicTrack } from '../types/music'
 import { useAuth } from '../providers/AuthProvider'
+import { useGenerationStatus } from '../services/websocket'
 import { AuthModal } from '../components/AuthModal'
 import { NeuralEngineConnect } from '../components/NeuralEngineConnect'
 import { translateToEnglish } from '../lib/translate'
@@ -49,8 +50,11 @@ export function TheGenerator() {
   const [generatedTrack, setGeneratedTrack] = useState<MusicTrack | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
-  const [pollingInterval, setPollingInterval] = useState<ReturnType<typeof setInterval> | null>(null)
   const [lyrics, setLyrics] = useState<string>('')
+  const [generationId, setGenerationId] = useState<string | null>(null)
+
+  // WebSocket hook for real-time updates
+  const { update: wsUpdate, connected: wsConnected } = useGenerationStatus(generationId)
 
   // Use global audio store to prevent multiple audios playing
   const { currentTrackId, isPlaying, play, pause } = useAudioStore()
@@ -187,14 +191,12 @@ export function TheGenerator() {
       }
 
       setGeneratedTrack(track)
+      setGenerationId(track.generationId!)
 
       // Guardar en historial local
       const history = JSON.parse(localStorage.getItem('generation_history') || '[]');
       history.unshift(track);
       localStorage.setItem('generation_history', JSON.stringify(history.slice(0, 50))); // Máximo 50
-
-      // Iniciar polling para actualizar estado
-      startPolling(track.generationId!, track.taskId!);
 
       toast.success('Track generation started!')
     } catch (err) {
@@ -207,83 +209,40 @@ export function TheGenerator() {
     }
   }
 
-  const startPolling = (generationId: string, taskId: string) => {
-    // Limpiar polling anterior si existe
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-    }
-
-    console.log(`[Polling] Starting for generation ${generationId}...`);
-
-    const interval = setInterval(async () => {
-      try {
-        const backendUrl = config.backendUrl;
-        const response = await fetch(`${backendUrl}/api/generation/${generationId}/status`, {
-          headers: {
-            'Authorization': `Bearer ${session?.access_token || ''}`
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.data) {
-            // ✅ LEGACY BEHAVIOR: Usar campos normalizados del backend
-            const { running, statusNormalized, tracks, audioUrl, status } = data.data;
-
-            // ✅ Priorizar tracks válidos sobre el estado
-            const hasValidTracks = tracks && Array.isArray(tracks) && tracks.length > 0;
-            const hasAudioUrl = !!audioUrl;
-
-            // Actualizar track con los datos recibidos
-            const updatedTrack: MusicTrack = {
-              ...generatedTrack!,
-              status: status as any, // Mantener el status de DB (COMPLETED, PROCESSING, etc.)
-              audioUrl: audioUrl || generatedTrack?.audioUrl || '',
-            };
-
-            setGeneratedTrack(updatedTrack);
-
-            // ✅ LEGACY BEHAVIOR: Determinar si debemos detener el polling
-            // Solo detenemos si:
-            // 1. Tenemos tracks o audioUrl válidos (éxito)
-            // 2. El estado es explícitamente 'failed' (error)
-            const shouldStopPolling = hasValidTracks || hasAudioUrl || statusNormalized === 'failed';
-
-            if (shouldStopPolling) {
-              console.log(`[Polling] Stopping for generation ${generationId}. Status: ${statusNormalized}, hasAudioUrl: ${hasAudioUrl}, tracks: ${tracks?.length || 0}`);
-              clearInterval(interval);
-              setPollingInterval(null);
-
-              if (hasValidTracks || hasAudioUrl) {
-                toast.success('Track generation completed!');
-              } else if (statusNormalized === 'failed') {
-                toast.error('Track generation failed');
-              }
-            } else {
-              // ✅ LEGACY BEHAVIOR: Continuar polling si running=true o statusNormalized='running'
-              console.log(`[Polling] Continuing... running=${running}, status=${statusNormalized}`);
-            }
-          }
-        } else {
-          // ⚠️ LEGACY BEHAVIOR: No abortar por error HTTP temporal
-          console.warn(`[Polling] HTTP ${response.status}, will retry...`);
-        }
-      } catch (error) {
-        // ⚠️ LEGACY BEHAVIOR: No abortar por error de red temporal
-        console.warn('[Polling] Network error, will retry...', error);
-      }
-    }, 5000); // Poll cada 5 segundos (LEGACY BEHAVIOR)
-
-    setPollingInterval(interval);
-  }
-
+  // Handle WebSocket updates
   useEffect(() => {
-    return () => {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
+    if (wsUpdate && generatedTrack) {
+      console.log('📡 WebSocket update received:', wsUpdate)
+
+      // Update track with WebSocket data
+      const updatedTrack: MusicTrack = {
+        ...generatedTrack,
+        status: wsUpdate.status as any,
+        audioUrl: wsUpdate.audioUrl || generatedTrack.audioUrl || '',
       }
-    };
-  }, [pollingInterval]);
+
+      setGeneratedTrack(updatedTrack)
+
+      // Handle completion states
+      if (wsUpdate.status === 'completed' && (wsUpdate.tracks?.length || wsUpdate.audioUrl)) {
+        toast.success('🎵 ¡Música generada exitosamente!')
+        setIsGenerating(false)
+      } else if (wsUpdate.status === 'failed') {
+        toast.error('❌ Error en la generación de música')
+        setIsGenerating(false)
+        setError(wsUpdate.error || 'Generation failed')
+      }
+    }
+  }, [wsUpdate, generatedTrack])
+
+  // Connection status indicator
+  useEffect(() => {
+    if (wsConnected) {
+      console.log('🔗 Conectado a actualizaciones en tiempo real')
+    } else {
+      console.log('📡 Usando modo polling (WebSocket no disponible)')
+    }
+  }, [wsConnected])
 
   const handlePlay = async () => {
     if (!generatedTrack?.audioUrl) {
@@ -364,9 +323,16 @@ export function TheGenerator() {
               </div>
             </div>
             <div className="flex-1 flex justify-end items-center gap-2">
-              <Link to="/pricing" className="mr-2 text-[#00bfff] hover:text-white transition-colors font-semibold">
-                Pricing
-              </Link>
+               {/* Connection Status Indicator */}
+               <div className="flex items-center gap-2 mr-4">
+                 <div className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'}`} />
+                 <span className="text-xs text-gray-400">
+                   {wsConnected ? 'Real-time' : 'Polling'}
+                 </span>
+               </div>
+               <Link to="/pricing" className="mr-2 text-[#00bfff] hover:text-white transition-colors font-semibold">
+                 Pricing
+               </Link>
               {isAuthenticated && (
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -640,22 +606,46 @@ export function TheGenerator() {
                   <Music size={48} className="text-gray-400" />
                 </div>
 
-                 {/* Track Info */}
-                 <div>
-                   <h3 className="text-lg font-semibold mb-2">
-                     {generatedTrack.prompt}
-                   </h3>
-                   <div className="flex items-center gap-4 text-sm text-gray-400">
-                     <div className="flex items-center gap-1">
-                       <Wand2 size={14} />
-                       Creatividad: {((generatedTrack as any).creativeIntensity || 0.7).toFixed(1)}
-                     </div>
-                     <div className="flex items-center gap-1">
-                       <Heart size={14} />
-                       Emoción: {((generatedTrack as any).emotionalDepth || 0.6).toFixed(1)}
-                     </div>
-                   </div>
-                 </div>
+                  {/* Track Info */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">
+                      {generatedTrack.prompt}
+                    </h3>
+                    <div className="flex items-center gap-4 text-sm text-gray-400 mb-3">
+                      <div className="flex items-center gap-1">
+                        <Wand2 size={14} />
+                        Creatividad: {((generatedTrack as any).creativeIntensity || 0.7).toFixed(1)}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Heart size={14} />
+                        Emoción: {((generatedTrack as any).emotionalDepth || 0.6).toFixed(1)}
+                      </div>
+                    </div>
+
+                    {/* Status & Progress */}
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-300">
+                          Status: <span className={`capitalize ${
+                            generatedTrack.status === 'completed' ? 'text-green-400' :
+                            generatedTrack.status === 'failed' ? 'text-red-400' :
+                            generatedTrack.status === 'processing' ? 'text-blue-400' : 'text-yellow-400'
+                          }`}>
+                            {generatedTrack.status || 'pending'}
+                          </span>
+                        </span>
+                        {generatedTrack.status === 'processing' && (
+                          <span className="text-xs text-gray-500">Real-time updates active</span>
+                        )}
+                      </div>
+
+                      {generatedTrack.status === 'processing' && (
+                        <div className="w-full bg-gray-700 rounded-full h-2">
+                          <div className="bg-blue-500 h-2 rounded-full animate-pulse" style={{ width: '60%' }} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
                 {/* Controls */}
                 <div className="flex items-center gap-2">

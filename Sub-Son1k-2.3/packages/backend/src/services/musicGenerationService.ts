@@ -9,6 +9,7 @@ import { CreditService } from './creditService';
 import axios, { AxiosInstance } from 'axios';
 import { env } from '../lib/config';
 import { PrismaClient } from '@prisma/client';
+import { emitGenerationUpdate } from '../websocket/generationSocket';
 import { Queue } from 'bullmq';
 import { withRetry } from '@super-son1k/shared-utils';
 
@@ -278,7 +279,7 @@ export class MusicGenerationService {
    * Check generation status
    * COMPORTAMIENTO LEGACY: Tolerante a estados inconsistentes, no falla con "unknown" o "running"
    */
-  async checkGenerationStatus(generationTaskId: string): Promise<GenerationResult> {
+  async checkGenerationStatus(generationTaskId: string, generationId?: string): Promise<GenerationResult> {
     try {
       // Get Token (Unified Strategy)
       let tokenStr: string;
@@ -357,8 +358,8 @@ export class MusicGenerationService {
 
         if (hasValidTracks) {
           const firstTrack = tracks.find((t: any) => t.audio_url);
-          return {
-            status: 'completed',
+          const result = {
+            status: 'completed' as const,
             generationTaskId,
             audioUrl: firstTrack.audio_url,
             metadata: {
@@ -367,13 +368,20 @@ export class MusicGenerationService {
               title: firstTrack.title,
               createdAt: new Date()
             }
-          };
+          } as GenerationResult;
+
+          // Emit WebSocket update
+          if (generationId) {
+            emitGenerationUpdate(generationId, 'completed', 100, tracks, firstTrack.audio_url);
+          }
+
+          return result;
         }
 
         // ✅ LEGACY BEHAVIOR: Fallback al campo audio_url directo
         if (data.audio_url) {
-          return {
-            status: 'completed',
+          const result = {
+            status: 'completed' as const,
             generationTaskId,
             audioUrl: data.audio_url,
             metadata: {
@@ -381,7 +389,14 @@ export class MusicGenerationService {
               title: data.title,
               createdAt: new Date()
             }
-          };
+          } as GenerationResult;
+
+          // Emit WebSocket update
+          if (generationId) {
+            emitGenerationUpdate(generationId, 'completed', 100, [], data.audio_url);
+          }
+
+          return result;
         }
 
         // ✅ LEGACY BEHAVIOR: Evaluar el campo "running" SOLO si no hay tracks

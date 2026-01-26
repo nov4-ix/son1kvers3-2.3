@@ -104,7 +104,7 @@ export async function setupWebSocket(app: FastifyInstance) {
     ws.send(JSON.stringify({
       type: 'connected',
       clientId,
-      userType,
+      tier: userTier,
       timestamp: new Date().toISOString(),
       message: 'Connected to Son1kvers3 WebSocket'
     }))
@@ -137,7 +137,7 @@ export async function setupWebSocket(app: FastifyInstance) {
       clients.delete(clientId)
       const duration = (Date.now() - connectTime) / 1000
       wsConnectionDuration.observe(duration)
-      if (typeof wsConnectionsActive?.labels === 'function') wsConnectionsActive.labels(userType).dec()
+      if (typeof wsConnectionsActive?.labels === 'function') wsConnectionsActive.labels(userTier).dec()
       logger.info({ clientId }, 'WebSocket client disconnected')
     })
 
@@ -147,7 +147,7 @@ export async function setupWebSocket(app: FastifyInstance) {
         clearInterval(client.heartbeat)
         client.heartbeat = undefined
       }
-      if (typeof wsConnectionsActive?.labels === 'function') wsConnectionsActive.labels(userType).dec()
+      if (typeof wsConnectionsActive?.labels === 'function') wsConnectionsActive.labels(userTier).dec()
       clients.delete(clientId)
     })
   })

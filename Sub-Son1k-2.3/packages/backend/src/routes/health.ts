@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify'
 import { PrismaClient } from '@prisma/client'
+import { getWebSocketStats } from '../websocket/generationSocket'
 
 const prisma = new PrismaClient()
 
@@ -71,5 +72,25 @@ export async function healthRoutes(app: FastifyInstance) {
       },
       timestamp: new Date().toISOString()
     }
+  })
+
+  // WebSocket health probe
+  app.get('/health/websocket', async (req, reply) => {
+    const stats = getWebSocketStats()
+    const totalConnections = stats.totalClients
+    const subscriptionCount = Array.from(stats.subscriptions.values()).reduce((a, b) => a + b, 0)
+
+    const health = {
+      status: totalConnections > 0 ? 'ok' : 'ok',
+      connections: {
+        total: totalConnections,
+        byUser: Object.fromEntries(stats.clientsByUser),
+        byTier: Object.fromEntries(stats.clientsByTier),
+        activeSubscriptions: subscriptionCount
+      },
+      timestamp: new Date().toISOString()
+    }
+    reply.code(200)
+    return health
   })
 }

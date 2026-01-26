@@ -12,6 +12,15 @@ import { PrismaClient } from '@prisma/client';
 import { emitGenerationUpdate } from '../websocket/generationSocket';
 import { Queue } from 'bullmq';
 import { withRetry } from '@super-son1k/shared-utils';
+import {
+  generationCounter,
+  generationDuration,
+  activeGenerations,
+  sunoApiCalls,
+  sunoApiDuration,
+  sunoApiErrors,
+  measureDuration
+} from '../monitoring/metrics';
 
 export interface GenerationRequest {
   prompt: string;

@@ -1,0 +1,1 @@
+*** Begin Patch *** Add File: Sub-Son1k-2.3/scripts/local/metrics-test.sh +#!/usr/bin/env bash +set -euo pipefail +echo "Testing /metrics endpoint..." +curl -sSf http://localhost:3001/metrics | head -n 40 +echo +echo "Done." ***

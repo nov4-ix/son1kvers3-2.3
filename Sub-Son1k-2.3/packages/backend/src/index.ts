@@ -17,6 +17,8 @@ import { globalRateLimit, generationRateLimit, authRateLimit } from './middlewar
 import { validateEnv, getEnv } from './config/env';
 import { healthRoutes } from './routes/health';
 import { setupWebSocket } from './websocket/generationSocket';
+import { metricsMiddleware } from './middleware/metricsMiddleware';
+import { metricsRoutes } from './routes/metrics';
 
 // ⚠️ VALIDAR ENV ANTES DE INICIAR
 validateEnv()
@@ -64,6 +66,9 @@ async function registerPlugins() {
 
   // Rate limiting global
   await fastify.register(rateLimit, globalRateLimit)
+
+  // Middleware global de métricas
+  fastify.addHook('onRequest', metricsMiddleware)
 
   // Setup WebSocket para updates en tiempo real
   await setupWebSocket(fastify)
@@ -168,6 +173,10 @@ async function start() {
     // Register Health Check Routes
     await fastify.register(healthRoutes);
     fastify.log.info('Health Check Routes registered');
+
+    // Register Metrics Routes
+    await fastify.register(metricsRoutes);
+    fastify.log.info('Metrics Routes registered');
 
     // Start Generation Worker (BullMQ)
     try {
